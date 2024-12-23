@@ -79,6 +79,7 @@ fun HomePage(
                             when (index) {
                                 1 -> showRegistroDialog = true
                                 2 -> navController.navigate("history")
+                                3 -> navController.navigate("food_correlation")
                                 else -> {
                                     // Navegación para las otras opciones de la barra inferior
                                     selectedTabIndex = index

@@ -2,6 +2,7 @@ package com.example.examen1
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -129,6 +130,20 @@ fun MyAppNavigation(
                 navController = navController,
                 historyViewModel = historyViewModel,
                 activeProfileViewModel = activeProfileViewModel
+            )
+        }
+        composable("food_correlation") {
+            val foodCorrelationViewModel: FoodCorrelationViewModel = viewModel(
+                factory = FoodCorrelationViewModelFactory(
+                    foodEntryViewModel,
+                    symptomEntryViewModel,
+                    stoolEntryViewModel
+                )
+            )
+            FoodCorrelationPage(
+                navController = navController,
+                viewModel = foodCorrelationViewModel,
+                foodEntryViewModel = foodEntryViewModel
             )
         }
     }
