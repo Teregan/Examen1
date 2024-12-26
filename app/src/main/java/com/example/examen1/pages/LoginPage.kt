@@ -67,9 +67,13 @@ import com.example.examen1.ui.theme.PrimaryPinkLight
 import com.example.examen1.ui.theme.PrimaryYellow
 import com.example.examen1.ui.theme.PrimaryYellowDark
 import com.example.examen1.ui.theme.PrimaryYellowLight
+import com.example.examen1.viewmodels.ProfileViewModel
+import kotlinx.coroutines.delay
 
 @Composable
-fun LoginPage (modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel) {
+fun LoginPage (modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel,
+               profileViewModel: ProfileViewModel
+) {
     val backgroundGradient = arrayOf(
         0f to PrimaryPinkBlended,
         1f to PrimaryPink
@@ -83,18 +87,45 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
     var password by remember {
         mutableStateOf("")
     }
+    var isLoading by remember { mutableStateOf(false) }
 
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
-    LaunchedEffect((authState.value)) {
-        when(authState.value){
-            is AuthState.Authenticated -> navController.navigate("home")
-            is AuthState.Error -> Toast.makeText(context,
-                (authState.value as AuthState.Error).message, Toast.LENGTH_SHORT).show()
-            else -> Unit
+    LaunchedEffect(Unit) {
+        // Reset los valores al entrar a la página
+        email = ""
+        password = ""
+        isLoading = false
+    }
+
+    LaunchedEffect(authState.value) {
+        when(authState.value) {
+            is AuthState.Authenticated -> {
+                isLoading = true
+                delay(500) // Dar tiempo para que se carguen los perfiles
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+                isLoading = false
+            }
+            is AuthState.Error -> {
+                Toast.makeText(
+                    context,
+                    (authState.value as AuthState.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+                isLoading = false
+            }
+            is AuthState.Loading -> {
+                isLoading = true
+            }
+            else -> {
+                isLoading = false
+            }
         }
     }
+
 
     Column(
         modifier = modifier
@@ -124,6 +155,8 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
         InputField(
             leadingIconRes = R.drawable.ic_person,
             placeholderText = "Email",
+            value = email,  // Añadir esto
+            onValueChange = { email = it },  // Añadir esto
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
@@ -132,6 +165,8 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
         InputField(
             leadingIconRes = R.drawable.ic_key,
             placeholderText = "Clave",
+            value = password,  // Añadir esto
+            onValueChange = { password = it },  // Añadir esto
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.padding(horizontal = 24.dp)
         )
@@ -140,10 +175,18 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
         Spacer(modifier = Modifier.height(16.dp))
 
         ActionButton(
-            text = "Entrar",
+            text = if (isLoading) "Ingresando..." else "Ingresar",
             isNavigationArrowVisible = true,
             onClicked = {
-                authViewModel.login(email,password)
+                if (email.isNotBlank() && password.isNotBlank()) {
+                    authViewModel.login(email, password)
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Por favor completa todos los campos",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = PrimaryPinkDark,
@@ -151,7 +194,7 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
             ),
             shadowColor = PrimaryYellowDark,
             modifier = Modifier.padding(24.dp),
-            enabled = authState.value != AuthState.Loading
+            enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
         )
         Separator(
             modifier = Modifier

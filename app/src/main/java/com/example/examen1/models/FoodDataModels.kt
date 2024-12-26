@@ -13,6 +13,7 @@ data class Allergen(
 data class FoodEntry(
     val id: String = "",
     val userId: String = "",
+    val profileId: String = "",
     val timestamp: Timestamp = Timestamp.now(),
     val time: String = "",
     val allergens: List<String> = emptyList(),

@@ -212,7 +212,10 @@ fun HistoryPage(
                                     time = entry.time,
                                     icon = Icons.Default.Star,
                                     onEdit = {
-                                        navController.navigate("food_entry_edit/${entry.id}")
+                                        val profileId = activeProfileState.value?.let {
+                                            (it as? ActiveProfileState.Success)?.profile?.id
+                                        } ?: return@HistoryEntryCard
+                                        navController.navigate("food_entry_edit/${entry.id}/$profileId")
                                     }
                                 )
                             }

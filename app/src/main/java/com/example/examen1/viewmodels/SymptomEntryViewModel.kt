@@ -18,8 +18,8 @@ import kotlinx.coroutines.tasks.await
 import java.util.Calendar
 import java.util.Date
 
-class SymptomEntryViewModel : ViewModel() {
-    private val auth = FirebaseAuth.getInstance()
+class SymptomEntryViewModel : BaseEntryViewModel() {
+
     private val firestore = FirebaseFirestore.getInstance()
     private var entriesListener: ListenerRegistration? = null
 
@@ -52,6 +52,8 @@ class SymptomEntryViewModel : ViewModel() {
 
     private fun setupEntriesListener() {
         val currentUserId = auth.currentUser?.uid ?: return
+
+        cleanup()
 
         entriesListener = firestore.collection("symptom_entries")
             .whereEqualTo("userId", currentUserId)

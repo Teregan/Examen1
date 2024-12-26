@@ -17,8 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 
-class FoodEntryViewModel : ViewModel() {
-    private val auth = FirebaseAuth.getInstance()
+class FoodEntryViewModel : BaseEntryViewModel() {
+
     private val firestore = FirebaseFirestore.getInstance()
     private var entriesListener: ListenerRegistration? = null
 
@@ -49,68 +49,76 @@ class FoodEntryViewModel : ViewModel() {
         setupEntriesListener()
     }
 
-    private fun setupEntriesListener() {
+    private fun setupEntriesListener(profileId: String? = null) {
         val currentUserId = auth.currentUser?.uid ?: return
 
-        entriesListener = firestore.collection("food_entries")
+        val query = firestore.collection("food_entries")
             .whereEqualTo("userId", currentUserId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("FoodEntryViewModel", "Error loading entries", error)
-                    _foodEntryState.value = FoodEntryState.Error(error.message ?: "Error loading entries")
-                    return@addSnapshotListener
-                }
+        cleanup()
 
-                if (snapshot != null) {
-                    val entriesList = snapshot.documents.mapNotNull { doc ->
-                        try {
-                            doc.toObject(FoodEntry::class.java)?.copy(id = doc.id)
-                        } catch (e: Exception) {
-                            Log.e("FoodEntryViewModel", "Error converting document", e)
-                            null
-                        }
-                    }
-                    _foodEntries.value = entriesList.sortedByDescending { it.createdAt }
-                }
+        // Si se proporciona un profileId, añadir el filtro
+        entriesListener = (if (profileId != null) {
+            query.whereEqualTo("profileId", profileId)
+        } else {
+            query
+        }).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                _foodEntryState.value = FoodEntryState.Error(error.message ?: "Error loading entries")
+                return@addSnapshotListener
             }
+
+            if (snapshot != null) {
+                val entriesList = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        doc.toObject(FoodEntry::class.java)?.copy(id = doc.id)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                _foodEntries.value = entriesList.sortedByDescending { it.createdAt }
+            }
+        }
     }
 
+    fun updateProfileFilter(profileId: String?) {
+        entriesListener?.remove()
+        setupEntriesListener(profileId)
+    }
 
-    fun addFoodEntry(date: Date, time: String, selectedAllergens: List<String>, notes: String = "") {
+    fun addFoodEntry(
+        date: Date,
+        time: String,
+        selectedAllergens: List<String>,
+        notes: String = "",
+        profileId: String // Añadir profileId como parámetro
+    ) {
         viewModelScope.launch {
             try {
                 _foodEntryState.value = FoodEntryState.Loading
                 val currentUserId = auth.currentUser?.uid ?: throw Exception("No user logged in")
 
-                // Create the entry data
                 val entryData = hashMapOf(
                     "userId" to currentUserId,
+                    "profileId" to profileId, // Añadir profileId
                     "timestamp" to Timestamp(date),
                     "time" to time,
                     "allergens" to selectedAllergens,
                     "createdAt" to System.currentTimeMillis()
                 )
 
-                // Solo agregar notes si no está vacío
                 if (notes.isNotEmpty()) {
                     entryData["notes"] = notes
                 }
 
-                Log.d("FoodEntryViewModel", "Prepared entry data: $entryData")
-
-                // Add to Firestore and wait for completion
                 firestore.collection("food_entries")
                     .add(entryData)
-                    .addOnSuccessListener { documentReference ->
-                        Log.d("FoodEntryViewModel", "Document added with ID: ${documentReference.id}")
+                    .addOnSuccessListener {
                         _foodEntryState.value = FoodEntryState.Success.Save
                     }
                     .addOnFailureListener { e ->
-                        Log.e("FoodEntryViewModel", "Error adding document", e)
                         _foodEntryState.value = FoodEntryState.Error(e.message ?: "Error adding food entry")
                     }
             } catch (e: Exception) {
-                Log.e("FoodEntryViewModel", "Error adding food entry", e)
                 _foodEntryState.value = FoodEntryState.Error(e.message ?: "Error adding food entry")
             }
         }

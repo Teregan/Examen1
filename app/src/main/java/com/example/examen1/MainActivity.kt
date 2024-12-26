@@ -22,25 +22,55 @@ import com.example.examen1.viewmodels.HistoryViewModel
 import androidx.activity.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.examen1.utils.NotificationPermissionHandler
+import com.example.examen1.viewmodels.ControlTypeViewModel
 
 class MainActivity : ComponentActivity() {
+    private lateinit var notificationPermissionHandler: NotificationPermissionHandler
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val authViewModel: AuthViewModel by viewModels()
+
+        notificationPermissionHandler = NotificationPermissionHandler(this)
+        notificationPermissionHandler.checkAndRequestNotificationPermission()
+
+
         val profileViewModel: ProfileViewModel by viewModels()
         val activeProfileViewModel: ActiveProfileViewModel by viewModels()
         val foodEntryViewModel: FoodEntryViewModel by viewModels()
         val symptomEntryViewModel: SymptomEntryViewModel by viewModels()
         val stoolEntryViewModel: StoolEntryViewModel by viewModels()
+        val controlEntryViewModel: ControlTypeViewModel by viewModels()
+        // Inicializa AuthViewModel con sus dependencias
+        val authViewModel by viewModels<AuthViewModel> {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return AuthViewModel(
+                        profileViewModel,
+                        symptomEntryViewModel,
+                        stoolEntryViewModel,
+                        foodEntryViewModel
+                    ) as T
+                }
+            }
+        }
+        // Inicializa HistoryViewModel con sus dependencias
         val historyViewModel by viewModels<HistoryViewModel> {
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     @Suppress("UNCHECKED_CAST")
-                    return HistoryViewModel(foodEntryViewModel, symptomEntryViewModel, stoolEntryViewModel) as T
+                    return HistoryViewModel(
+                        foodEntryViewModel,
+                        symptomEntryViewModel,
+                        stoolEntryViewModel
+                    ) as T
                 }
             }
         }
+
         setContent {
             Examen1Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -52,7 +82,8 @@ class MainActivity : ComponentActivity() {
                         foodEntryViewModel = foodEntryViewModel,
                         symptomEntryViewModel = symptomEntryViewModel,
                         stoolEntryViewModel = stoolEntryViewModel,
-                        historyViewModel = historyViewModel
+                        historyViewModel = historyViewModel,
+                        controlTypeViewModel = controlEntryViewModel
                     )
                 }
             }

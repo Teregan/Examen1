@@ -20,12 +20,19 @@ fun MyAppNavigation(
     foodEntryViewModel: FoodEntryViewModel,
     symptomEntryViewModel: SymptomEntryViewModel,
     stoolEntryViewModel: StoolEntryViewModel,
-    historyViewModel: HistoryViewModel
+    historyViewModel: HistoryViewModel,
+    controlTypeViewModel: ControlTypeViewModel
 ) {
     val navController = rememberNavController()
+    val notificationViewModel: NotificationViewModel = viewModel(
+        factory = NotificationViewModelFactory(
+            foodEntryViewModel,
+            controlTypeViewModel
+        )
+    )
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
-            LoginPage(modifier, navController, authViewModel)
+            LoginPage(modifier, navController, authViewModel, profileViewModel)
         }
         composable("signup") {
             SignupPage(modifier, navController, authViewModel)
@@ -39,27 +46,60 @@ fun MyAppNavigation(
                 profileViewModel = profileViewModel,
                 foodEntryViewModel = foodEntryViewModel,
                 symptomEntryViewModel = symptomEntryViewModel,
-                stoolEntryViewModel = stoolEntryViewModel
+                stoolEntryViewModel = stoolEntryViewModel,
+                controlTypeViewModel = controlTypeViewModel,
+                notificationViewModel = notificationViewModel
             )
         }
         composable("profiles") {
             ProfilesPage(modifier, navController, profileViewModel)
         }
 
-        // Rutas de Alimentación
-        composable("food_entry") {
-            FoodEntryPage(modifier, navController, foodEntryViewModel)
-        }
+        // Control de Alérgenos
         composable(
-            route = "food_entry_edit/{entryId}",
-            arguments = listOf(navArgument("entryId") { type = NavType.StringType })
+            route = "control_type/{profileId}",
+            arguments = listOf(navArgument("profileId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
+            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
+            ControlTypePage(
+                modifier = modifier,
+                navController = navController,
+                controlTypeViewModel = controlTypeViewModel,
+                foodEntryViewModel = foodEntryViewModel,
+                profileId = profileId
+            )
+        }
+
+        // Rutas de Alimentación
+        composable(
+            route = "food_entry/{profileId}",
+            arguments = listOf(navArgument("profileId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
             FoodEntryPage(
                 modifier = modifier,
                 navController = navController,
                 viewModel = foodEntryViewModel,
-                entryId = entryId
+                controlTypeViewModel = controlTypeViewModel,
+                profileId = profileId
+            )
+        }
+        composable(
+            route = "food_entry_edit/{entryId}/{profileId}",
+            arguments = listOf(
+                navArgument("entryId") { type = NavType.StringType },
+                navArgument("profileId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
+            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
+            FoodEntryPage(
+                modifier = modifier,
+                navController = navController,
+                viewModel = foodEntryViewModel,
+                controlTypeViewModel = controlTypeViewModel,
+                entryId = entryId,
+                profileId = profileId
             )
         }
 
@@ -137,13 +177,17 @@ fun MyAppNavigation(
                 factory = FoodCorrelationViewModelFactory(
                     foodEntryViewModel,
                     symptomEntryViewModel,
-                    stoolEntryViewModel
+                    stoolEntryViewModel,
+                    profileViewModel  // Agregar profileViewModel
                 )
             )
             FoodCorrelationPage(
+                modifier = modifier,
                 navController = navController,
                 viewModel = foodCorrelationViewModel,
-                foodEntryViewModel = foodEntryViewModel
+                foodEntryViewModel = foodEntryViewModel,
+                activeProfileViewModel = activeProfileViewModel,
+                profileViewModel = profileViewModel  // Agregar profileViewModel
             )
         }
     }

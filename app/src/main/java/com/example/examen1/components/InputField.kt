@@ -26,6 +26,8 @@ import com.example.examen1.ui.theme.DarkTextColor
 @Composable
 fun InputField(
     modifier: Modifier = Modifier,
+    value: String = "",  // Añadir esto
+    onValueChange: (String) -> Unit = {},  // Añadir esto
     visualTransformation: VisualTransformation = VisualTransformation.None,
     @DrawableRes leadingIconRes: Int,
     placeholderText: String
@@ -36,8 +38,8 @@ fun InputField(
         modifier = modifier
             .fillMaxWidth()
             .height(62.dp),
-        value = inputValue,
-        onValueChange = { inputValue = it },
+        value = value,  // Usar el value recibido
+        onValueChange = onValueChange,  // Usar el onValueChange recibido
         visualTransformation = visualTransformation,
         singleLine = true,
         shape = RoundedCornerShape(percent = 50),

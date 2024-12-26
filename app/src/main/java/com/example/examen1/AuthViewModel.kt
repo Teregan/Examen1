@@ -3,9 +3,15 @@ package com.example.examen1
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.examen1.viewmodels.*
 import com.google.firebase.auth.FirebaseAuth
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(
+    private val profileViewModel: ProfileViewModel,
+    private val symptomEntryViewModel: SymptomEntryViewModel,
+    private val stoolEntryViewModel: StoolEntryViewModel,
+    private val foodEntryViewModel: FoodEntryViewModel
+) : ViewModel() {
 
     private val auth : FirebaseAuth = FirebaseAuth.getInstance()
 
@@ -61,6 +67,12 @@ class AuthViewModel : ViewModel() {
     }
 
     fun signout(){
+        // Primero limpiar todos los listeners
+        profileViewModel.cleanup()
+        symptomEntryViewModel.cleanup()
+        stoolEntryViewModel.cleanup()
+        foodEntryViewModel.cleanup()
+
         auth.signOut()
         _authState.value = AuthState.Unauthenticated
     }

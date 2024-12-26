@@ -6,7 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 class FoodCorrelationViewModelFactory(
     private val foodEntryViewModel: FoodEntryViewModel,
     private val symptomEntryViewModel: SymptomEntryViewModel,
-    private val stoolEntryViewModel: StoolEntryViewModel
+    private val stoolEntryViewModel: StoolEntryViewModel,
+    private val profileViewModel: ProfileViewModel
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FoodCorrelationViewModel::class.java)) {
@@ -14,7 +15,8 @@ class FoodCorrelationViewModelFactory(
             return FoodCorrelationViewModel(
                 foodEntryViewModel,
                 symptomEntryViewModel,
-                stoolEntryViewModel
+                stoolEntryViewModel,
+                profileViewModel
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

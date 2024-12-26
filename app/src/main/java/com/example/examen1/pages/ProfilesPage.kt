@@ -126,69 +126,53 @@ fun ProfileCard(
     onDelete: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = profile.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                IconButton(onClick = { showDialog = true }) {
+        // ... resto del código del Card ...
 
-                    Icon(
-                        painter = painterResource(R.drawable.ic_delete),
-                        contentDescription = "Eliminar perfil"
-                    )
-                }
-            }
-            if (showDialog) {
-                AlertDialog(
-                    onDismissRequest = { /* Dismiss dialog */ },
-                    title = { Text("¿Estás seguro de eliminar este perfil?") },
-                    text = { Text("Esta acción no se puede deshacer.") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("¿Estás seguro de eliminar este perfil?") },
+                text = { Text("Esta acción no se puede deshacer.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            try {
                                 onDelete()
                                 showDialog = false
+                            } catch (e: Exception) {
+                                errorMessage = e.message ?: "Error al eliminar el perfil"
+                                showErrorDialog = true
                             }
-                        ) {
-                            Text("Eliminar")
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = {showDialog = false}) {
-                            Text("Cancelar")
-                        }
+                    ) {
+                        Text("Eliminar")
                     }
-                )
-            }
-            Text(
-                text = when (profile.profileType) {
-                    ProfileType.MOTHER -> "Madre"
-                    ProfileType.INFANT -> "Infante"
                 },
-                style = MaterialTheme.typography.bodyMedium
+                dismissButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
             )
+        }
 
-            if (profile.profileType == ProfileType.INFANT && profile.isNursing == true) {
-                Text(
-                    text = "Lactante",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = PrimaryPink
-                )
-            }
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                title = { Text("Error") },
+                text = { Text(errorMessage) },
+                confirmButton = {
+                    TextButton(onClick = { showErrorDialog = false }) {
+                        Text("Aceptar")
+                    }
+                }
+            )
         }
     }
 }
@@ -201,6 +185,7 @@ fun AddProfileDialog(
     var name by remember { mutableStateOf("") }
     var profileType by remember { mutableStateOf(ProfileType.INFANT) }
     var isNursing by remember { mutableStateOf(false) }
+    var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -211,37 +196,61 @@ fun AddProfileDialog(
             ) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = {
+                        name = it
+                        isError = false
+                    },
                     label = { Text("Nombre") },
+                    isError = isError,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Tipo de Perfil:")
-                    RadioButton(
-                        selected = profileType == ProfileType.INFANT,
-                        onClick = { profileType = ProfileType.INFANT }
+                if (isError) {
+                    Text(
+                        text = "El nombre es requerido",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
                     )
-                    Text("Infante")
-                    RadioButton(
-                        selected = profileType == ProfileType.MOTHER,
-                        onClick = { profileType = ProfileType.MOTHER }
-                    )
-                    Text("Madre")
                 }
 
+                // Tipo de Perfil
+                Column {
+                    Text(
+                        text = "Tipo de Perfil",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = profileType == ProfileType.INFANT,
+                            onClick = { profileType = ProfileType.INFANT },
+                            label = { Text("Infante") }
+                        )
+                        FilterChip(
+                            selected = profileType == ProfileType.MOTHER,
+                            onClick = { profileType = ProfileType.MOTHER },
+                            label = { Text("Madre") }
+                        )
+                    }
+                }
+
+                // Opción de lactancia solo para infantes
                 AnimatedVisibility(visible = profileType == ProfileType.INFANT) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
                             checked = isNursing,
                             onCheckedChange = { isNursing = it }
                         )
-                        Text("Es lactante")
+                        Text(
+                            text = "¿Es lactante?",
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
                     }
                 }
             }
@@ -249,14 +258,17 @@ fun AddProfileDialog(
         confirmButton = {
             TextButton(
                 onClick = {
+                    if (name.isBlank()) {
+                        isError = true
+                        return@TextButton
+                    }
                     val profile = UserProfile(
-                        name = name,
+                        name = name.trim(),
                         profileType = profileType,
                         isNursing = if (profileType == ProfileType.INFANT) isNursing else null
                     )
                     onAdd(profile)
-                },
-                enabled = name.isNotBlank()
+                }
             ) {
                 Text("Agregar")
             }

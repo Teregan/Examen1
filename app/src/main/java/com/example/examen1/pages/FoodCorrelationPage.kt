@@ -3,6 +3,7 @@ package com.example.examen1.pages
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,15 +19,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.examen1.models.ActiveProfileState
 import com.example.examen1.models.FoodCorrelationState
 import com.example.examen1.ui.theme.PrimaryPinkDark
-import com.example.examen1.viewmodels.FoodCorrelationViewModel
-import com.example.examen1.viewmodels.FoodEntryViewModel
+import com.example.examen1.viewmodels.*
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.unit.dp
+import com.example.examen1.models.ProfileType
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,13 +40,17 @@ fun FoodCorrelationPage(
     modifier: Modifier = Modifier,
     navController: NavController,
     viewModel: FoodCorrelationViewModel,
-    foodEntryViewModel: FoodEntryViewModel
+    foodEntryViewModel: FoodEntryViewModel,
+    activeProfileViewModel: ActiveProfileViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val profiles = profileViewModel.profiles.observeAsState(initial = emptyList())
 
     var startDate by remember { mutableStateOf(Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000)) }
     var endDate by remember { mutableStateOf(Date()) }
+    var selectedProfileId by remember { mutableStateOf<String?>(null) }
 
     val correlationState by viewModel.correlationState.observeAsState()
 
@@ -54,10 +63,23 @@ fun FoodCorrelationPage(
         "rash" to "Erupciones en la piel"
     )
 
-    // Efecto para cargar correlaciones al inicio
+    // Efecto para cargar el perfil activo
     LaunchedEffect(Unit) {
-        viewModel.analyzeCorrelations(startDate, endDate)
+        activeProfileViewModel.loadLastActiveProfile()
     }
+
+    // Efecto para cargar correlaciones cuando hay perfil activo
+    /*LaunchedEffect(activeProfileState.value) {
+        when (val state = activeProfileState.value) {
+            is ActiveProfileState.Success -> {
+                viewModel.analyzeCorrelations(startDate, endDate, state.profile.id)
+            }
+            is ActiveProfileState.Error -> {
+                // Manejar error si es necesario
+            }
+            else -> {}
+        }
+    }*/
 
     Scaffold(
         topBar = {
@@ -85,6 +107,48 @@ fun FoodCorrelationPage(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            Text(
+                text = "Seleccionar Perfil",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Chip de "Todos los perfiles"
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(bottom = 16.dp)
+            ) {
+                FilterChip(
+                    selected = selectedProfileId == null,
+                    onClick = {
+                        selectedProfileId = null
+                        viewModel.analyzeCorrelations(startDate, endDate, null)
+                    },
+                    label = { Text("Todos") },
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+
+                profiles.value.forEach { profile ->
+                    FilterChip(
+                        selected = selectedProfileId == profile.id,
+                        onClick = {
+                            selectedProfileId = profile.id
+                            viewModel.analyzeCorrelations(startDate, endDate, profile.id)
+                        },
+                        label = { Text(profile.name) },
+                        leadingIcon = {
+                            if (profile.profileType == ProfileType.MOTHER) {
+                                Icon(Icons.Default.Person, "Madre")
+                            } else {
+                                Icon(Icons.Default.Face, "Niño")
+                            }
+                        },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+            }
+
             // Selector de fecha inicial
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -96,7 +160,7 @@ fun FoodCorrelationPage(
                         { _, year, month, day ->
                             calendar.set(year, month, day)
                             startDate = calendar.time
-                            viewModel.analyzeCorrelations(startDate, endDate)
+                            viewModel.analyzeCorrelations(startDate, endDate, selectedProfileId)
                         },
                         calendar.get(Calendar.YEAR),
                         calendar.get(Calendar.MONTH),
@@ -123,7 +187,7 @@ fun FoodCorrelationPage(
                         { _, year, month, day ->
                             calendar.set(year, month, day)
                             endDate = calendar.time
-                            viewModel.analyzeCorrelations(startDate, endDate)
+                            viewModel.analyzeCorrelations(startDate, endDate, selectedProfileId)
                         },
                         calendar.get(Calendar.YEAR),
                         calendar.get(Calendar.MONTH),
@@ -137,10 +201,9 @@ fun FoodCorrelationPage(
                 )
             }
 
+
             Spacer(modifier = Modifier.height(16.dp))
 
-
-            // Mostrar resultados
             when (val state = correlationState) {
                 is FoodCorrelationState.Loading -> {
                     CircularProgressIndicator(

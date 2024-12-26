@@ -27,11 +27,18 @@ class ProfileViewModel : ViewModel() {
         setupProfilesListener()
     }
 
+    fun hasProfiles(): Boolean {
+        return !profiles.value.isNullOrEmpty()
+    }
+
     private fun setupProfilesListener() {
         val currentUserId = auth.currentUser?.uid ?: return
 
+        _profileState.value = ProfileState.Loading
+
         profilesListener = firestore.collection("profiles")
             .whereEqualTo("userId", currentUserId)
+            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     _profileState.value = ProfileState.Error(error.message ?: "Error loading profiles")
@@ -44,6 +51,9 @@ class ProfileViewModel : ViewModel() {
                     }
                     _profiles.value = profilesList
                     _profileState.value = ProfileState.Success
+                } else {
+                    _profiles.value = emptyList()
+                    _profileState.value = ProfileState.Success
                 }
             }
     }
@@ -54,11 +64,18 @@ class ProfileViewModel : ViewModel() {
                 _profileState.value = ProfileState.Loading
                 val currentUserId = auth.currentUser?.uid ?: throw Exception("No user logged in")
 
-                val profileData = profile.copy(userId = currentUserId)
-                firestore.collection("profiles")
+                // Crear una copia del perfil con el userId actualizado
+                val profileData = profile.copy(
+                    userId = currentUserId,
+                    createdAt = System.currentTimeMillis()
+                )
+
+                // Añadir el documento y obtener la referencia
+                val documentRef = firestore.collection("profiles")
                     .add(profileData)
                     .await()
 
+                // Actualizar el estado con éxito
                 _profileState.value = ProfileState.Success
             } catch (e: Exception) {
                 _profileState.value = ProfileState.Error(e.message ?: "Error adding profile")
@@ -71,6 +88,34 @@ class ProfileViewModel : ViewModel() {
             try {
                 _profileState.value = ProfileState.Loading
 
+                // Verificar si hay registros asociados
+                val hasFood = firestore.collection("food_entries")
+                    .whereEqualTo("profileId", profileId)
+                    .limit(1)
+                    .get()
+                    .await()
+                    .size() > 0
+
+                val hasSymptoms = firestore.collection("symptom_entries")
+                    .whereEqualTo("profileId", profileId)
+                    .limit(1)
+                    .get()
+                    .await()
+                    .size() > 0
+
+                val hasStools = firestore.collection("stool_entries")
+                    .whereEqualTo("profileId", profileId)
+                    .limit(1)
+                    .get()
+                    .await()
+                    .size() > 0
+
+                if (hasFood || hasSymptoms || hasStools) {
+                    _profileState.value = ProfileState.Error("No se puede eliminar un perfil con registros asociados")
+                    return@launch
+                }
+
+                // Si no hay registros, proceder con la eliminación
                 firestore.collection("profiles")
                     .document(profileId)
                     .delete()
@@ -83,8 +128,34 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    fun updateProfile(profile: UserProfile) {
+        viewModelScope.launch {
+            try {
+                _profileState.value = ProfileState.Loading
+
+                profile.id?.let { id ->
+                    firestore.collection("profiles")
+                        .document(id)
+                        .set(profile)
+                        .await()
+
+                    _profileState.value = ProfileState.Success
+                } ?: throw Exception("Profile ID is required for update")
+            } catch (e: Exception) {
+                _profileState.value = ProfileState.Error(e.message ?: "Error updating profile")
+            }
+        }
+    }
+
+    fun cleanup() {
+        profilesListener?.remove()
+        profilesListener = null
+        _profiles.value = emptyList()
+        _profileState.value = ProfileState.Success
+    }
+
     override fun onCleared() {
         super.onCleared()
-        profilesListener?.remove()
+        cleanup()
     }
 }

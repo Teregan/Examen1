@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 
-class StoolEntryViewModel : ViewModel() {
-    private val auth = FirebaseAuth.getInstance()
+class StoolEntryViewModel : BaseEntryViewModel() {
+
     private val firestore = FirebaseFirestore.getInstance()
     private var entriesListener: ListenerRegistration? = null
 
@@ -40,6 +40,7 @@ class StoolEntryViewModel : ViewModel() {
     private fun setupEntriesListener() {
         val currentUserId = auth.currentUser?.uid ?: return
 
+        cleanup()
         entriesListener = firestore.collection("stool_entries")
             .whereEqualTo("userId", currentUserId)
             .addSnapshotListener { snapshot, error ->
