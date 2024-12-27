@@ -90,4 +90,11 @@ dependencies {
 
     // Notification dependencies
     implementation("androidx.core:core-ktx:1.12.0")
+
+    // Para generar PDFs
+    implementation("com.itextpdf:itext7-core:7.2.5")
+
+    // Para el almacenamiento de archivos
+    implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("androidx.fragment:fragment-ktx:1.3.6")
 }
