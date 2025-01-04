@@ -1,5 +1,6 @@
 package com.example.examen1.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -55,7 +56,9 @@ class ControlTypeViewModel : BaseEntryViewModel() {
                         null
                     }
                 }
-                _activeControls.value = controlsList.sortedByDescending { it.createdAt }
+                // Filtramos los controles que están realmente activos
+                val reallyActiveControls = controlsList.filter { it.isCurrentlyActive() }
+                _activeControls.value = reallyActiveControls.sortedByDescending { it.createdAt }
             }
         }
     }
@@ -107,5 +110,54 @@ class ControlTypeViewModel : BaseEntryViewModel() {
     override fun onCleared() {
         super.onCleared()
         controlsListener?.remove()
+    }
+
+    suspend fun searchByDateRange(startDate: Date, endDate: Date): List<AllergenControl> {
+        val currentUserId = auth.currentUser?.uid ?: return emptyList()
+
+        return try {
+            Log.d("ControlTypeViewModel", "Buscando controles entre ${startDate} y ${endDate}")
+            val snapshot = firestore.collection("allergen_controls")
+                .whereEqualTo("userId", currentUserId)
+                .get()
+                .await()
+
+            Log.d("ControlTypeViewModel", "Controles encontrados: ${snapshot.documents.size}")
+
+            val controls = snapshot.documents.mapNotNull { doc ->
+                try {
+                    doc.toObject(AllergenControl::class.java)?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            // Filtramos los controles que se solapan con el rango de fechas seleccionado
+            val filteredControls = controls.filter { control ->
+                // Un control está dentro del rango si:
+                // Su fecha de inicio está dentro del rango O
+                // Su fecha de fin está dentro del rango O
+                // El rango está contenido dentro del periodo del control
+                (control.startDateAsDate >= startDate && control.startDateAsDate <= endDate) ||
+                        (control.endDateAsDate >= startDate && control.endDateAsDate <= endDate) ||
+                        (control.startDateAsDate <= startDate && control.endDateAsDate >= endDate)
+            }
+
+            Log.d("ControlTypeViewModel", "Controles filtrados por fecha: ${filteredControls.size}")
+            filteredControls.forEach { control ->
+                Log.d("ControlTypeViewModel", """
+                Control encontrado:
+                ID: ${control.id}
+                Inicio: ${control.startDateAsDate}
+                Fin: ${control.endDateAsDate}
+                Activo: ${control.isActive}
+            """.trimIndent())
+            }
+
+            filteredControls.sortedByDescending { it.startDate.seconds }
+        } catch (e: Exception) {
+            Log.e("ControlTypeViewModel", "Error buscando controles", e)
+            emptyList()
+        }
     }
 }

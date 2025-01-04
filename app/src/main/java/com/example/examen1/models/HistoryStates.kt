@@ -10,7 +10,8 @@ sealed class HistoryState {
     data class Success(
         val foodEntries: List<FoodEntry> = emptyList(),
         val symptomEntries: List<SymptomEntry> = emptyList(),
-        val stoolEntries: List<StoolEntry> = emptyList()
+        val stoolEntries: List<StoolEntry> = emptyList(),
+        val controlEntries: List<AllergenControl> = emptyList()
     ) : HistoryState()
     data class Error(val message: String) : HistoryState()
 }

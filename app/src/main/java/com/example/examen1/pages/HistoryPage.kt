@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.examen1.ui.theme.PrimaryPinkDark
 
 enum class RecordType {
-    ALL, FOOD, SYMPTOM, STOOL
+    ALL, FOOD, SYMPTOM, STOOL, CONTROL
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,9 +43,7 @@ fun HistoryPage(
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val activeProfileState = activeProfileViewModel.activeProfileState.observeAsState()
 
-    LaunchedEffect(Unit) {
-        historyViewModel.searchRecords()
-    }
+
 
     Scaffold(
         topBar = {
@@ -134,6 +132,7 @@ fun HistoryPage(
                                 RecordType.FOOD -> "Registros de alimentación"
                                 RecordType.SYMPTOM -> "Registros de síntomas"
                                 RecordType.STOOL -> "Registros de deposiciones"
+                                RecordType.CONTROL -> "Registros de control de alérgenos"
                             },
                             onValueChange = {},
                             readOnly = true,
@@ -169,6 +168,13 @@ fun HistoryPage(
                                 text = { Text("Registros de deposiciones") },
                                 onClick = {
                                     recordType = RecordType.STOOL
+                                    expandedTypeMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Registros de control de alérgenos") },
+                                onClick = {
+                                    recordType = RecordType.CONTROL
                                     expandedTypeMenu = false
                                 }
                             )
@@ -256,6 +262,19 @@ fun HistoryPage(
                                 )
                             }
                         }
+
+                        if (recordType == RecordType.ALL || recordType == RecordType.CONTROL) {
+                            items(state.controlEntries) { control ->
+                                HistoryEntryCard(
+                                    title = "Control de Alérgeno - ${control.controlType.displayName}",
+                                    date = control.startDateAsDate,
+                                    time = "Del ${dateFormatter.format(control.startDateAsDate)} al ${dateFormatter.format(control.endDateAsDate)} " +
+                                            if (!control.isCurrentlyActive()) "(Finalizado)" else "(Activo)",
+                                    icon = Icons.Default.AddCircle,
+                                    onEdit = {} // Los controles no se pueden editar
+                                )
+                            }
+                        }
                     }
                 }
                 is HistoryState.Error -> {
@@ -264,6 +283,9 @@ fun HistoryPage(
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(16.dp)
                     )
+                }
+                HistoryState.Initial -> {
+                    // No mostrar nada en el estado inicial
                 }
                 else -> Unit
             }

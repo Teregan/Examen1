@@ -62,6 +62,7 @@ fun FoodCorrelationPage(
     navController: NavController,
     viewModel: FoodCorrelationViewModel,
     foodEntryViewModel: FoodEntryViewModel,
+    symptomEntryViewModel: SymptomEntryViewModel,
     activeProfileViewModel: ActiveProfileViewModel,
     profileViewModel: ProfileViewModel
 ) {
@@ -266,7 +267,11 @@ fun FoodCorrelationPage(
                                 onClick = {
                                     // Obtener los bitmaps de los gráficos
 
-                                    val pdfService = PDFService(context)
+                                    val pdfService = PDFService(
+                                        context = context,
+                                        foodEntryViewModel = foodEntryViewModel,
+                                        symptomEntryViewModel = symptomEntryViewModel
+                                    )
                                     pdfService.generateAndShareCorrelationReport(
                                         correlations = state.correlations,
                                         profileName = selectedProfileId?.let { id ->

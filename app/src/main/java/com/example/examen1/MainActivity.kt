@@ -23,22 +23,26 @@ import androidx.activity.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.examen1.utils.NotificationPermissionHandler
 import com.example.examen1.viewmodels.ControlTypeViewModel
 
 class MainActivity : ComponentActivity() {
-    private lateinit var notificationPermissionHandler: NotificationPermissionHandler
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        notificationPermissionHandler = NotificationPermissionHandler(this)
-        notificationPermissionHandler.checkAndRequestNotificationPermission()
 
 
         val profileViewModel: ProfileViewModel by viewModels()
-        val activeProfileViewModel: ActiveProfileViewModel by viewModels()
+        val activeProfileViewModel by viewModels<ActiveProfileViewModel> {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return ActiveProfileViewModel(applicationContext) as T
+                }
+            }
+        }
         val foodEntryViewModel: FoodEntryViewModel by viewModels()
         val symptomEntryViewModel: SymptomEntryViewModel by viewModels()
         val stoolEntryViewModel: StoolEntryViewModel by viewModels()
@@ -65,7 +69,8 @@ class MainActivity : ComponentActivity() {
                     return HistoryViewModel(
                         foodEntryViewModel,
                         symptomEntryViewModel,
-                        stoolEntryViewModel
+                        stoolEntryViewModel,
+                        controlEntryViewModel
                     ) as T
                 }
             }

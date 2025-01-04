@@ -89,10 +89,10 @@ fun FoodEntryPage(
 
     // Efecto para actualizar los alérgenos cuando hay controles activos
     LaunchedEffect(activeControls.value) {
-        val controls = activeControls.value
-        if (controls.isNotEmpty()) {
+        val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
+        if (currentlyActiveControls.isNotEmpty()) {
             selectedAllergens = selectedAllergens.map { allergen ->
-                allergen.copy(isSelected = controls.any { it.allergenId == allergen.id })
+                allergen.copy(isSelected = currentlyActiveControls.any { it.allergenId == allergen.id })
             }
         }
     }
@@ -277,7 +277,10 @@ fun FoodEntryPage(
                                 .padding(vertical = 8.dp)
                         ) {
                             items(selectedAllergens) { allergen ->
-                                val hasActiveControl = activeControls.value.any { it.allergenId == allergen.id }
+                                val hasActiveControl = activeControls.value
+                                    .filter { it.isCurrentlyActive() }
+                                    .any { it.allergenId == allergen.id }
+
 
                                 AllergenItem(
                                     allergen = allergen,

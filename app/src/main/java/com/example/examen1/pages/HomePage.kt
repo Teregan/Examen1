@@ -1,5 +1,6 @@
 package com.example.examen1.pages
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.AuthState
 import com.example.examen1.AuthViewModel
-import com.example.examen1.components.NotificationConfigDialog
 import com.example.examen1.models.ActiveProfileState
 import com.example.examen1.models.AllergenControl
 import com.example.examen1.models.ProfileType
@@ -41,8 +41,7 @@ fun HomePage(
     foodEntryViewModel: FoodEntryViewModel,
     symptomEntryViewModel: SymptomEntryViewModel,
     stoolEntryViewModel: StoolEntryViewModel,
-    controlTypeViewModel: ControlTypeViewModel,
-    notificationViewModel: NotificationViewModel
+    controlTypeViewModel: ControlTypeViewModel
 ) {
     val authState = authViewModel.authState.observeAsState()
     val activeProfileState = activeProfileViewModel.activeProfileState.observeAsState()
@@ -54,8 +53,16 @@ fun HomePage(
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     // Agregar el estado para el diálogo
-    var showNotificationConfigDialog by remember { mutableStateOf(false) }
-    var selectedControl by remember { mutableStateOf<AllergenControl?>(null) }
+    val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
+    Log.d("HomePage", "Currently active controls: ${currentlyActiveControls.size}")
+    currentlyActiveControls.forEach { control ->
+        Log.d("HomePage", """
+        Control ID: ${control.id}
+        Type: ${control.controlType}
+        Start Date: ${control.startDateAsDate}
+        End Date: ${control.endDateAsDate}
+    """.trimIndent())
+    }
 
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showRegistroDialog by remember { mutableStateOf(false) }
@@ -122,7 +129,7 @@ fun HomePage(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
-                    ListItem(
+                    /*ListItem(
                         headlineContent = { Text("Gestionar Perfiles") },
                         leadingContent = {
                             Icon(
@@ -131,8 +138,12 @@ fun HomePage(
                                 tint = PrimaryPinkDark
                             )
                         },
-                        modifier = Modifier.clickable { navController.navigate("profiles") }
-                    )
+                        modifier = Modifier.clickable {
+                            selectedTabIndex = 0  // Resetear el tab seleccionado
+                            showSettingsContent = false  // Ocultar la vista de ajustes
+                            navController.navigate("profiles")
+                        }
+                    )*/
                     Divider()
 
                     ListItem(
@@ -241,7 +252,9 @@ fun HomePage(
                                 fontWeight = FontWeight.Bold
                             )
                             IconButton(
-                                onClick = { navController.navigate("profiles") }
+                                onClick = {
+                                    selectedTabIndex = 0
+                                    navController.navigate("profiles") }
                             ) {
                                 Icon(
                                     Icons.Default.Add,
@@ -407,6 +420,7 @@ fun HomePage(
 
                                 // Controles Activos
                                 activeControls.value
+                                    .filter { it.isCurrentlyActive() }  // Asegurar que solo se muestren los realmente activos
                                     .take(3)
                                     .forEach { control ->
                                         ListItem(
@@ -424,19 +438,8 @@ fun HomePage(
                                                     contentDescription = null,
                                                     tint = PrimaryPinkDark
                                                 )
-                                            },
-                                            trailingContent = {
-                                                IconButton(onClick = {
-                                                    selectedControl = control
-                                                    showNotificationConfigDialog = true
-                                                }) {
-                                                    Icon(
-                                                        Icons.Default.Notifications,
-                                                        contentDescription = "Configurar notificaciones",
-                                                        tint = PrimaryPinkDark
-                                                    )
-                                                }
                                             }
+
                                         )
                                         HorizontalDivider()
                                     }
@@ -629,29 +632,7 @@ fun HomePage(
             }
         )
     }
-    // Agregar el diálogo de configuración
-    if (showNotificationConfigDialog && selectedControl != null) {
-        NotificationConfigDialog(
-            allergenName = foodEntryViewModel.allergens.find { it.id == selectedControl?.allergenId }?.name ?: "",
-            onDismiss = {
-                showNotificationConfigDialog = false
-                selectedControl = null
-            },
-            onConfirm = { time, enabled ->
-                selectedControl?.let { control ->
-                    notificationViewModel.setupNotification(
-                        profileId = control.profileId,
-                        controlId = control.id,
-                        allergenId = control.allergenId,
-                        notifyTime = time,
-                        isEnabled = enabled
-                    )
-                }
-                showNotificationConfigDialog = false
-                selectedControl = null
-            }
-        )
-    }
+
 }
 
 @Composable

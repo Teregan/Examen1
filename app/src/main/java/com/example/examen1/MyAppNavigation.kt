@@ -24,12 +24,7 @@ fun MyAppNavigation(
     controlTypeViewModel: ControlTypeViewModel
 ) {
     val navController = rememberNavController()
-    val notificationViewModel: NotificationViewModel = viewModel(
-        factory = NotificationViewModelFactory(
-            foodEntryViewModel,
-            controlTypeViewModel
-        )
-    )
+
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             LoginPage(modifier, navController, authViewModel, profileViewModel)
@@ -47,12 +42,16 @@ fun MyAppNavigation(
                 foodEntryViewModel = foodEntryViewModel,
                 symptomEntryViewModel = symptomEntryViewModel,
                 stoolEntryViewModel = stoolEntryViewModel,
-                controlTypeViewModel = controlTypeViewModel,
-                notificationViewModel = notificationViewModel
+                controlTypeViewModel = controlTypeViewModel
             )
         }
         composable("profiles") {
-            ProfilesPage(modifier, navController, profileViewModel)
+            ProfilesPage(
+                modifier = modifier,
+                navController = navController,
+                profileViewModel = profileViewModel,
+                activeProfileViewModel = activeProfileViewModel  // Agregar este parámetro
+            )
         }
 
         // Control de Alérgenos
@@ -165,6 +164,14 @@ fun MyAppNavigation(
             )
         }
         composable("history") {
+            val historyViewModel: HistoryViewModel = viewModel(
+                factory = HistoryViewModelFactory(
+                    foodEntryViewModel,
+                    symptomEntryViewModel,
+                    stoolEntryViewModel,
+                    controlTypeViewModel  // Añadido
+                )
+            )
             HistoryPage(
                 modifier = modifier,
                 navController = navController,
@@ -178,7 +185,7 @@ fun MyAppNavigation(
                     foodEntryViewModel,
                     symptomEntryViewModel,
                     stoolEntryViewModel,
-                    profileViewModel  // Agregar profileViewModel
+                    profileViewModel
                 )
             )
             FoodCorrelationPage(
@@ -186,8 +193,9 @@ fun MyAppNavigation(
                 navController = navController,
                 viewModel = foodCorrelationViewModel,
                 foodEntryViewModel = foodEntryViewModel,
+                symptomEntryViewModel = symptomEntryViewModel, // Agregar este parámetro
                 activeProfileViewModel = activeProfileViewModel,
-                profileViewModel = profileViewModel  // Agregar profileViewModel
+                profileViewModel = profileViewModel
             )
         }
     }

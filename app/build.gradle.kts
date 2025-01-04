@@ -85,11 +85,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
 
-    // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.8.1")
-
-    // Notification dependencies
-    implementation("androidx.core:core-ktx:1.12.0")
 
     // Para generar PDFs
     implementation("com.itextpdf:itext7-core:7.2.5")

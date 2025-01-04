@@ -24,13 +24,15 @@ import com.example.examen1.models.UserProfile
 import com.example.examen1.models.ProfileState
 import com.example.examen1.viewmodels.ProfileViewModel
 import com.example.examen1.ui.theme.*
+import com.example.examen1.viewmodels.ActiveProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilesPage(
     modifier: Modifier = Modifier,
     navController: NavController,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    activeProfileViewModel: ActiveProfileViewModel
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     val profiles = profileViewModel.profiles.observeAsState(initial = emptyList())
@@ -41,6 +43,17 @@ fun ProfilesPage(
         when (val state = profileState.value) {
             is ProfileState.Error -> {
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+            }
+            is ProfileState.Success -> {
+                // Si es el primer perfil creado, establecerlo como activo y navegar al home
+                if (profiles.value.size == 1) {
+                    profiles.value.firstOrNull()?.let { profile ->
+                        activeProfileViewModel.setActiveProfile(profile)
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                }
             }
             else -> Unit
         }
@@ -109,12 +122,21 @@ fun ProfilesPage(
 
 
     // Add Profile Dialog
-    if (showAddDialog) {
+    /*if (showAddDialog) {
         AddProfileDialog(
             onDismiss = { showAddDialog = false },
             onAdd = { profile ->
                 profileViewModel.addProfile(profile)
                 showAddDialog = false
+            }
+        )
+    }*/
+    if (showAddDialog) {
+        AddProfileDialog(
+            onDismiss = { showAddDialog = false },
+            onAdd = { profile ->
+                profileViewModel.addProfile(profile)
+                // No cerramos el diálogo aquí, se cerrará cuando el profileState cambie a Success
             }
         )
     }

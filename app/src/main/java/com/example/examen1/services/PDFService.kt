@@ -6,6 +6,8 @@ import android.os.Environment
 import android.view.View
 import androidx.compose.ui.graphics.asAndroidBitmap
 import com.example.examen1.models.FoodCorrelation
+import com.example.examen1.viewmodels.FoodEntryViewModel
+import com.example.examen1.viewmodels.SymptomEntryViewModel
 import com.itextpdf.io.image.ImageDataFactory
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -21,7 +23,44 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PDFService(private val context: Context) {
+class PDFService(
+    private val context: Context,
+    private val foodEntryViewModel: FoodEntryViewModel,
+    private val symptomEntryViewModel: SymptomEntryViewModel
+) {
+
+    // Mapeo para los tipos de deposición
+    private val stoolTypeMap = mapOf(
+        "HARD" to "Dura",
+        "NORMAL" to "Normal",
+        "SOFT" to "Blanda",
+        "LIQUID" to "Líquida"
+    )
+
+    // Mapeo para los colores de deposición
+    private val stoolColorMap = mapOf(
+        "BROWN" to "Café",
+        "GREEN" to "Verde",
+        "YELLOW" to "Amarillo",
+        "BLACK" to "Negro",
+        "RED" to "Rojo"
+    )
+
+    private fun getAllergenName(allergenId: String): String {
+        return foodEntryViewModel.allergens.find { it.id == allergenId }?.name ?: allergenId
+    }
+
+    private fun getSymptomName(symptomId: String): String {
+        return symptomEntryViewModel.predefinedSymptoms.find { it.id == symptomId }?.name ?: symptomId
+    }
+
+    private fun getStoolTypeName(type: String): String {
+        return stoolTypeMap[type] ?: type
+    }
+
+    private fun getStoolColorName(color: String): String {
+        return stoolColorMap[color] ?: color
+    }
 
     fun generateAndShareCorrelationReport(
         correlations: List<FoodCorrelation>,
@@ -105,18 +144,23 @@ class PDFService(private val context: Context) {
             // Datos
             correlations.forEach { correlation ->
                 // Alimentos
-                val allergens = correlation.foodEntry.allergens.joinToString(", ")
+                val allergens = correlation.foodEntry.allergens
+                    .map { getAllergenName(it) }
+                    .joinToString(", ")
                 table.addCell("${dateFormatter.format(correlation.foodEntry.date)}\n$allergens")
 
                 // Síntomas
                 val symptoms = correlation.relatedSymptoms.joinToString("\n") { symptom ->
-                    "${dateFormatter.format(symptom.date)}: ${symptom.symptoms.joinToString(", ")}"
+                    val translatedSymptoms = symptom.symptoms
+                        .map { getSymptomName(it) }
+                        .joinToString(", ")
+                    "${dateFormatter.format(symptom.date)}: $translatedSymptoms"
                 }
                 table.addCell(symptoms)
 
                 // Deposiciones
                 val stools = correlation.relatedStoolEntries.joinToString("\n") { stool ->
-                    "${dateFormatter.format(stool.date)}: ${stool.stoolType}, ${stool.color}"
+                    "${dateFormatter.format(stool.date)}: ${getStoolTypeName(stool.stoolType.name)}, ${getStoolColorName(stool.color.name)}"
                 }
                 table.addCell(stools)
             }
