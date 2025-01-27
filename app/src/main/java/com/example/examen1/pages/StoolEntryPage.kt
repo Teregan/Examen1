@@ -16,10 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.examen1.components.ActionButton
 import com.example.examen1.models.StoolColor
 import com.example.examen1.models.StoolEntryState
 import com.example.examen1.models.StoolType
-import com.example.examen1.ui.theme.PrimaryPinkDark
+import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.viewmodels.StoolEntryViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -84,34 +85,19 @@ fun StoolEntryPage(
         }
     }
 
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text(if (entryId != null) "Editar Deposición" else "Registrar Deposición") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = PrimaryPinkDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
+
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(
+                text = if (entryId != null) "Editar Deposición" else "Registrar Deposición",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainGreen
+            )
             // Tipo de deposición
             Text(
                 text = "Selección Tipo Deposición",
@@ -281,8 +267,10 @@ fun StoolEntryPage(
             )
 
             // Botón guardar
-            Button(
-                onClick = {
+            ActionButton(
+                text = if (entryId != null) "Actualizar" else "Guardar",
+                isNavigationArrowVisible = false,
+                onClicked = {
                     if (entryId != null) {
                         viewModel.updateStoolEntry(
                             entryId = entryId,
@@ -304,11 +292,14 @@ fun StoolEntryPage(
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = stoolEntryState.value != StoolEntryState.Loading
-            ) {
-                Text(if (entryId != null) "Actualizar" else "Guardar")
-            }
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MainGreen,
+                    contentColor = Color.White
+                ),
+                shadowColor = MainGreen,
+                enabled = stoolEntryState.value != StoolEntryState.Loading,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-    }
+
 }

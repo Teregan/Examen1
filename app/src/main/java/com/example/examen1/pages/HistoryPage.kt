@@ -3,6 +3,7 @@ package com.example.examen1.pages
 import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,7 +22,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.examen1.ui.theme.PrimaryPinkDark
+import com.example.examen1.ui.theme.MainGreen
 
 enum class RecordType {
     ALL, FOOD, SYMPTOM, STOOL, CONTROL
@@ -33,41 +34,31 @@ fun HistoryPage(
     modifier: Modifier = Modifier,
     navController: NavController,
     historyViewModel: HistoryViewModel,
-    activeProfileViewModel: ActiveProfileViewModel
+    activeProfileViewModel: ActiveProfileViewModel,
+    tagViewModel: TagViewModel // Agregar TagViewModel
 ) {
     val historyState = historyViewModel.historyState.observeAsState()
     var startDate by remember { mutableStateOf(Date()) }
     var endDate by remember { mutableStateOf(Date()) }
     var recordType by remember { mutableStateOf(RecordType.ALL) }
+    var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) } // Nuevo
     var expandedTypeMenu by remember { mutableStateOf(false) }
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val activeProfileState = activeProfileViewModel.activeProfileState.observeAsState()
+    val availableTags = tagViewModel.tags.observeAsState(initial = emptyList()) // Nuevo
 
 
 
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text("Historial") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = PrimaryPinkDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            Text(
+                text = "Historial",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainGreen
+            )
             // Filtros
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -181,12 +172,41 @@ fun HistoryPage(
                         }
                     }
 
+                    // Selector de etiquetas
+                    if (recordType == RecordType.FOOD || recordType == RecordType.ALL) {
+                        Text(
+                            text = "Filtrar por etiquetas:",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(availableTags.value) { tag ->
+                                FilterChip(
+                                    selected = tag.id in selectedTags,
+                                    onClick = {
+                                        selectedTags = if (tag.id in selectedTags) {
+                                            selectedTags - tag.id
+                                        } else {
+                                            selectedTags + tag.id
+                                        }
+                                    },
+                                    label = { Text(tag.name) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex))
+                                    )
+                                )
+                            }
+                        }
+                    }
+
                     Button(
                         onClick = {
                             historyViewModel.searchRecords(
                                 startDate = startDate,
                                 endDate = endDate,
-                                recordType = recordType
+                                recordType = recordType,
+                                selectedTags = selectedTags
                             )
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -211,7 +231,9 @@ fun HistoryPage(
                     ) {
                         // Mostrar resultados de alimentación
                         if (recordType == RecordType.ALL || recordType == RecordType.FOOD) {
-                            items(state.foodEntries) { entry ->
+                            items(state.foodEntries.filter { entry ->
+                                selectedTags.isEmpty() || entry.tagIds.any { it in selectedTags }
+                            }) { entry ->
                                 HistoryEntryCard(
                                     title = "Alimentos",
                                     date = entry.date,
@@ -290,7 +312,7 @@ fun HistoryPage(
                 else -> Unit
             }
         }
-    }
+
 }
 
 @Composable
@@ -299,17 +321,39 @@ private fun HistoryEntryCard(
     date: Date,
     time: String,
     icon: ImageVector,
+    tags: List<Tag> = emptyList(),
     onEdit: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onEdit
     ) {
-        ListItem(
-            headlineContent = { Text(title) },
-            supportingContent = { Text(time) },
-            leadingContent = { Icon(icon, contentDescription = null) },
-            trailingContent = { Text(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)) }
-        )
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            ListItem(
+                headlineContent = { Text(title) },
+                supportingContent = { Text(time) },
+                leadingContent = { Icon(icon, contentDescription = null) },
+                trailingContent = { Text(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)) }
+            )
+            if (tags.isNotEmpty()) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    items(tags) { tag ->
+                        FilterChip(
+                            selected = false,
+                            onClick = {},
+                            label = { Text(tag.name) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color(android.graphics.Color.parseColor(tag.colorHex)).copy(alpha = 0.2f)
+                            )
+                        )
+                    }
+                }
+            }
+        }
     }
 }

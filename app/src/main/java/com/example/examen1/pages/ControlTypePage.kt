@@ -19,10 +19,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
-import com.example.examen1.models.Allergen
 import com.example.examen1.models.ControlType
 import com.example.examen1.models.ControlTypeState
-import com.example.examen1.ui.theme.PrimaryPinkDark
+import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.viewmodels.ControlTypeViewModel
 import com.example.examen1.viewmodels.FoodEntryViewModel
 import java.text.SimpleDateFormat
@@ -65,33 +64,19 @@ fun ControlTypePage(
         }
     }
 
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text("Nuevo Control de Alérgeno") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = PrimaryPinkDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
+            Text(
+                text = "Nuevo Control de Alérgeno",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainGreen
+            )
+
             // Control Type Selection
             Text("Tipo de Control", style = MaterialTheme.typography.titleMedium)
             Row(
@@ -102,7 +87,7 @@ fun ControlTypePage(
                     onClick = { selectedControlType = ControlType.ELIMINATION },
                     label = { Text("Eliminación") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryPinkDark,
+                        selectedContainerColor = MainGreen,
                         selectedLabelColor = Color.White
                     )
                 )
@@ -111,7 +96,7 @@ fun ControlTypePage(
                     onClick = { selectedControlType = ControlType.CONTROLLED },
                     label = { Text("Controlada") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryPinkDark,
+                        selectedContainerColor = MainGreen,
                         selectedLabelColor = Color.White
                     )
                 )
@@ -233,12 +218,12 @@ fun ControlTypePage(
                 },
                 isNavigationArrowVisible = false,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryPinkDark,
+                    containerColor = MainGreen,
                     contentColor = Color.White
                 ),
                 enabled = controlTypeState.value !is ControlTypeState.Loading,
                 modifier = Modifier.fillMaxWidth(),
-                shadowColor = PrimaryPinkDark,
+                shadowColor = MainGreen,
             )
 
             if (controlTypeState.value is ControlTypeState.Loading) {
@@ -247,6 +232,6 @@ fun ControlTypePage(
                 )
             }
         }
-    }
+
 }
 

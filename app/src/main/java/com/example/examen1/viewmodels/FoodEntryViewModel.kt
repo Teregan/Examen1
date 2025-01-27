@@ -89,6 +89,7 @@ class FoodEntryViewModel : BaseEntryViewModel() {
         date: Date,
         time: String,
         selectedAllergens: List<String>,
+        selectedTags: List<String>,
         notes: String = "",
         profileId: String // Añadir profileId como parámetro
     ) {
@@ -103,6 +104,7 @@ class FoodEntryViewModel : BaseEntryViewModel() {
                     "timestamp" to Timestamp(date),
                     "time" to time,
                     "allergens" to selectedAllergens,
+                    "tagIds" to selectedTags,
                     "createdAt" to System.currentTimeMillis()
                 )
 
@@ -124,29 +126,28 @@ class FoodEntryViewModel : BaseEntryViewModel() {
         }
     }
 
-    fun updateFoodEntry(entryId: String, date: Date, time: String, selectedAllergens: List<String>, notes: String) {
+    fun updateFoodEntry(
+        entryId: String,
+        date: Date,
+        time: String,
+        selectedAllergens: List<String>,
+        selectedTags: List<String>, // Nuevo parámetro
+        notes: String,
+        profileId: String
+    ) {
         viewModelScope.launch {
             try {
                 _foodEntryState.value = FoodEntryState.Loading
                 val currentUserId = auth.currentUser?.uid ?: throw Exception("No user logged in")
 
-                // Primero verificar que el registro pertenece al usuario actual
-                val documentSnapshot = firestore.collection("food_entries")
-                    .document(entryId)
-                    .get()
-                    .await()
-
-                val entry = documentSnapshot.toObject(FoodEntry::class.java)
-                if (entry?.userId != currentUserId) {
-                    throw Exception("No tienes permiso para modificar este registro")
-                }
-
                 val updates = hashMapOf(
                     "timestamp" to Timestamp(date),
                     "time" to time,
                     "allergens" to selectedAllergens,
+                    "tagIds" to selectedTags, // Agregar tags
                     "notes" to notes,
-                    "userId" to currentUserId  // Asegurar que el userId se mantiene
+                    "userId" to currentUserId,
+                    "profileId" to profileId
                 )
 
                 firestore.collection("food_entries")
@@ -159,7 +160,6 @@ class FoodEntryViewModel : BaseEntryViewModel() {
                     .addOnFailureListener { e ->
                         _foodEntryState.value = FoodEntryState.Error(e.message ?: "Error updating food entry")
                     }
-
             } catch (e: Exception) {
                 _foodEntryState.value = FoodEntryState.Error(e.message ?: "Error updating food entry")
             }

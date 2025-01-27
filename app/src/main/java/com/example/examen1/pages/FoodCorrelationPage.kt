@@ -52,6 +52,7 @@ import android.graphics.Path as AndroidPath
 import android.graphics.PointF
 import android.graphics.RectF
 import androidx.compose.ui.platform.LocalContext
+import com.example.examen1.ui.theme.MainGreen
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -108,32 +109,17 @@ fun FoodCorrelationPage(
         }
     }*/
 
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text("Correlaciones de Alimentos") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = PrimaryPinkDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            Text(
+                text = "Correlaciones de Alimentos",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainGreen
+            )
+
             Text(
                 text = "Seleccionar Perfil",
                 style = MaterialTheme.typography.titleMedium,
@@ -400,7 +386,7 @@ fun FoodCorrelationPage(
                 else -> Unit
             }
         }
-    }
+
 }
 
 @Composable

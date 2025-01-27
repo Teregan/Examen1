@@ -2,9 +2,17 @@ package com.example.examen1.pages
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,17 +22,28 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.example.examen1.AuthState
 import com.example.examen1.AuthViewModel
+import com.example.examen1.components.QuickAccessItem
 import com.example.examen1.models.ActiveProfileState
 import com.example.examen1.models.AllergenControl
+
 import com.example.examen1.models.ProfileType
+import com.example.examen1.ui.theme.DarkGreen
+import com.example.examen1.ui.theme.GradientEnd
+import com.example.examen1.ui.theme.GradientStart
+import com.example.examen1.ui.theme.LightBlue
+import com.example.examen1.ui.theme.MainGreen
+import com.example.examen1.ui.theme.MediumGreen
 import com.example.examen1.viewmodels.*
 import com.example.examen1.ui.theme.PrimaryPinkDark
 import java.text.SimpleDateFormat
@@ -68,6 +87,7 @@ fun HomePage(
     var showRegistroDialog by remember { mutableStateOf(false) }
     var showAddProfileDialog by remember { mutableStateOf(false) }
     var showSettingsContent by remember { mutableStateOf(false) }
+    var showActiveControlDialog by remember { mutableStateOf(false) }
 
     // Función para verificar si hay un perfil activo
     fun hasActiveProfile(): Boolean {
@@ -107,7 +127,16 @@ fun HomePage(
             }
         }
     }
-
+    // Agregar este LaunchedEffect después de obtener los controles activos
+    LaunchedEffect(activeControls.value) {
+        val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
+        showActiveControlDialog = currentlyActiveControls.isNotEmpty()
+    }
+    LaunchedEffect(profiles.value) {
+        if (profiles.value.isEmpty()) {
+            showAddProfileDialog = true
+        }
+    }
     if (profiles.value.isEmpty()) {
         NoProfilesView(
             onCreateProfile = { showAddProfileDialog = true },
@@ -169,45 +198,50 @@ fun HomePage(
         Scaffold(
             bottomBar = {
                 NavigationBar(
-                    containerColor = PrimaryPinkDark,
-                    contentColor = Color.White
+                    containerColor = MainGreen,
+
                 ) {
                     listOf(
                         Triple("Home", Icons.Default.Home, 0),
-                        Triple("Registros", Icons.Default.Edit, 1),
-                        Triple("Historial", Icons.Default.DateRange, 2),
-                        Triple("Informes", Icons.Default.Face, 3),
-                        Triple("Ajustes", Icons.Default.Settings, 4)
+                        Triple("Calendario", Icons.Default.DateRange, 1),
+                        Triple("Informes", Icons.Default.Face, 2),
+                        Triple("Ajustes", Icons.Default.Settings, 3)
                     ).forEachIndexed { index, (label, icon, _) ->
                         NavigationBarItem(
                             icon = { Icon(icon, contentDescription = label, tint = Color.White) },
-                            label = { Text(label, color = Color.White) },
+                            label = {
+                                Text(
+                                    text = label,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,  // Fuente más pequeña
+                                    maxLines = 1,  // Limitar a una línea
+                                    overflow = TextOverflow.Ellipsis  // Manejar texto largo
+                                )
+                            },
                             selected = selectedTabIndex == index,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color.White,
+                                unselectedIconColor = Color.White.copy(alpha = 0.7f),
+                                indicatorColor = MediumGreen
+                            ),
                             onClick = {
                                 selectedTabIndex = index
                                 when (index) {
-                                    1 -> {
+                                    1->{
                                         if (hasActiveProfile()) {
-                                            showRegistroDialog = true
+                                            navController.navigate("monthly_calendar/${(activeProfileState.value as ActiveProfileState.Success).profile.id}")
                                         } else {
                                             showNoActiveProfileMessage()
                                         }
                                     }
                                     2 -> {
                                         if (hasActiveProfile()) {
-                                            navController.navigate("history")
-                                        } else {
-                                            showNoActiveProfileMessage()
-                                        }
-                                    }
-                                    3 -> {
-                                        if (hasActiveProfile()) {
                                             navController.navigate("food_correlation")
                                         } else {
                                             showNoActiveProfileMessage()
                                         }
                                     }
-                                    4 -> {
+                                    3 -> {
                                         selectedTabIndex = index
                                         showSettingsContent = true
                                     }
@@ -221,85 +255,158 @@ fun HomePage(
                 }
             }
         ) { paddingValues ->
-            Column(
-                modifier = modifier
+            LazyColumn(
+                modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // Perfil Activo Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = PrimaryPinkDark,
-                        contentColor = Color.White
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(GradientEnd,GradientStart )
+                        )
                     )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(paddingValues),
+            )  {
+                // Perfil Activo Card
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.padding(16.dp)
                         ) {
-                            Text(
-                                text = "Perfil Activo",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            IconButton(
-                                onClick = {
-                                    selectedTabIndex = 0
-                                    navController.navigate("profiles") }
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Agregar perfil",
-                                    tint = Color.White
+                                Text(
+                                    text = "Perfil Activo",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MainGreen,
+                                    fontWeight = FontWeight.Bold
                                 )
+                                IconButton(
+                                    onClick = { navController.navigate("profiles") }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = "Agregar perfil",
+                                        tint = MainGreen
+                                    )
+                                }
                             }
-                        }
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .horizontalScroll(rememberScrollState())
-                                .padding(vertical = 8.dp)
-                        ) {
-                            profiles.value.forEach { profile ->
-                                FilterChip(
-                                    selected = when (activeProfileState.value) {
-                                        is ActiveProfileState.Success ->
-                                            (activeProfileState.value as ActiveProfileState.Success).profile.id == profile.id
-                                        else -> false
-                                    },
-                                    onClick = { activeProfileViewModel.setActiveProfile(profile) },
-                                    label = { Text(profile.name) },
-                                    leadingIcon = {
-                                        if (profile.profileType == ProfileType.MOTHER) {
-                                            Icon(Icons.Default.Person, "Madre")
-                                        } else {
-                                            Icon(Icons.Default.Face, "Niño")
-                                        }
-                                    }
-                                )
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(vertical = 8.dp)
+                            ) {
+                                items(profiles.value) { profile ->
+                                    FilterChip(
+                                        selected = when (activeProfileState.value) {
+                                            is ActiveProfileState.Success ->
+                                                (activeProfileState.value as ActiveProfileState.Success).profile.id == profile.id
+                                            else -> false
+                                        },
+                                        onClick = { activeProfileViewModel.setActiveProfile(profile) },
+                                        label = { Text(profile.name) },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (profile.profileType == ProfileType.MOTHER) Icons.Default.Person
+                                                else Icons.Default.Face,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MainGreen,
+                                            selectedLabelColor = Color.White,
+                                            selectedLeadingIconColor = Color.White
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
                 }
 
-                // Accesos Rápidos
-                Text(
-                    text = "Acceso Rápido",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-
-                Card(
+                // Título de Accesos Rápidos
+                item {
+                    Text(
+                        text = "Acceso Rápido",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Black,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+                // Grid de Accesos Rápidos
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                QuickAccessItem(
+                                    icon = Icons.Default.AddCircle,
+                                    text = "Control Alérgenos",
+                                    subtitle = if (activeControls.value.isNotEmpty())
+                                        "${activeControls.value.size} activo(s)" else null
+                                ) {
+                                    if (hasActiveProfile()) {
+                                        navController.navigate("control_type/${(activeProfileState.value as ActiveProfileState.Success).profile.id}")
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(modifier = Modifier.weight(1f)) {
+                                QuickAccessItem(
+                                    icon = Icons.Default.Star,
+                                    text = "Alimentos"
+                                ) {
+                                    if (hasActiveProfile()) {
+                                        navController.navigate("food_entry/${(activeProfileState.value as ActiveProfileState.Success).profile.id}")
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                QuickAccessItem(
+                                    icon = Icons.Default.Warning,
+                                    text = "Síntomas"
+                                ) {
+                                    if (hasActiveProfile()) {
+                                        navController.navigate("symptom_entry/${(activeProfileState.value as ActiveProfileState.Success).profile.id}")
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(modifier = Modifier.weight(1f)) {
+                                QuickAccessItem(
+                                    icon = Icons.Default.CheckCircle,
+                                    text = "Deposiciones"
+                                ) {
+                                    if (hasActiveProfile()) {
+                                        navController.navigate("stool_entry/${(activeProfileState.value as ActiveProfileState.Success).profile.id}")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                /*Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
@@ -387,134 +494,146 @@ fun HomePage(
                             }
                         }
                     }
-                }
+                }*/
 
                 // Últimos Registros
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Últimos Registros",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    TextButton(onClick = { navController.navigate("history") }) {
-                        Text("Ver más")
-                    }
-                }
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp)
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White
+                        )
                     ) {
-                        when (activeProfileState.value) {
-                            is ActiveProfileState.Success -> {
-                                val currentProfileId = (activeProfileState.value as ActiveProfileState.Success).profile.id
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Últimos Registros",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = { navController.navigate("history") }) {
+                                Text("Ver más")
+                            }
+                        }
 
-                                // Controles Activos
-                                activeControls.value
-                                    .filter { it.isCurrentlyActive() }  // Asegurar que solo se muestren los realmente activos
-                                    .take(3)
-                                    .forEach { control ->
-                                        ListItem(
-                                            headlineContent = { Text("Control de Alérgeno") },
-                                            supportingContent = {
-                                                Column {
-                                                    Text("Tipo: ${control.controlType.displayName}")
-                                                    val allergen = foodEntryViewModel.allergens.find { it.id == control.allergenId }
-                                                    Text(allergen?.name ?: "")
-                                                }
-                                            },
-                                            leadingContent = {
-                                                Icon(
-                                                    Icons.Default.AddCircle,
-                                                    contentDescription = null,
-                                                    tint = PrimaryPinkDark
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                when (activeProfileState.value) {
+                                    is ActiveProfileState.Success -> {
+                                        val currentProfileId = (activeProfileState.value as ActiveProfileState.Success).profile.id
+
+                                        // Controles Activos
+                                        activeControls.value
+                                            .filter { it.isCurrentlyActive() }  // Asegurar que solo se muestren los realmente activos
+                                            .take(3)
+                                            .forEach { control ->
+                                                ListItem(
+                                                    headlineContent = { Text("Control de Alérgeno") },
+                                                    supportingContent = {
+                                                        Column {
+                                                            Text("Tipo: ${control.controlType.displayName}")
+                                                            val allergen = foodEntryViewModel.allergens.find { it.id == control.allergenId }
+                                                            Text(allergen?.name ?: "")
+                                                        }
+                                                    },
+                                                    leadingContent = {
+                                                        Icon(
+                                                            Icons.Default.AddCircle,
+                                                            contentDescription = null,
+                                                            tint = DarkGreen
+                                                        )
+                                                    }
+
                                                 )
+                                                HorizontalDivider()
                                             }
 
-                                        )
-                                        HorizontalDivider()
-                                    }
+                                        // Alimentos
+                                        foodEntries.value
+                                            .filter { it.profileId == currentProfileId }
+                                            .take(3)
+                                            .forEach { entry ->
+                                                ListItem(
+                                                    headlineContent = { Text("Alimentos") },
+                                                    supportingContent = { Text(entry.time) },
+                                                    leadingContent = { Icon(Icons.Default.Star, contentDescription = null) },
+                                                    trailingContent = { Text(dateFormatter.format(entry.date)) }
+                                                )
+                                                Divider()
+                                            }
 
-                                // Alimentos
-                                foodEntries.value
-                                    .filter { it.profileId == currentProfileId }
-                                    .take(3)
-                                    .forEach { entry ->
-                                        ListItem(
-                                            headlineContent = { Text("Alimentos") },
-                                            supportingContent = { Text(entry.time) },
-                                            leadingContent = { Icon(Icons.Default.Star, contentDescription = null) },
-                                            trailingContent = { Text(dateFormatter.format(entry.date)) }
-                                        )
-                                        Divider()
-                                    }
+                                        // Síntomas
+                                        symptomEntries.value
+                                            .filter { it.profileId == currentProfileId }
+                                            .take(3)
+                                            .forEach { entry ->
+                                                ListItem(
+                                                    headlineContent = { Text("Síntomas") },
+                                                    supportingContent = { Text(entry.time) },
+                                                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+                                                    trailingContent = { Text(dateFormatter.format(entry.date)) }
+                                                )
+                                                Divider()
+                                            }
 
-                                // Síntomas
-                                symptomEntries.value
-                                    .filter { it.profileId == currentProfileId }
-                                    .take(3)
-                                    .forEach { entry ->
-                                        ListItem(
-                                            headlineContent = { Text("Síntomas") },
-                                            supportingContent = { Text(entry.time) },
-                                            leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
-                                            trailingContent = { Text(dateFormatter.format(entry.date)) }
-                                        )
-                                        Divider()
-                                    }
+                                        // Deposiciones
+                                        stoolEntries.value
+                                            .filter { it.profileId == currentProfileId }
+                                            .take(3)
+                                            .forEach { entry ->
+                                                ListItem(
+                                                    headlineContent = { Text("Deposición") },
+                                                    supportingContent = { Text(entry.time) },
+                                                    leadingContent = { Icon(Icons.Default.Check, contentDescription = null) },
+                                                    trailingContent = { Text(dateFormatter.format(entry.date)) }
+                                                )
+                                                Divider()
+                                            }
 
-                                // Deposiciones
-                                stoolEntries.value
-                                    .filter { it.profileId == currentProfileId }
-                                    .take(3)
-                                    .forEach { entry ->
-                                        ListItem(
-                                            headlineContent = { Text("Deposición") },
-                                            supportingContent = { Text(entry.time) },
-                                            leadingContent = { Icon(Icons.Default.Check, contentDescription = null) },
-                                            trailingContent = { Text(dateFormatter.format(entry.date)) }
-                                        )
-                                        Divider()
+                                        if (foodEntries.value.none { it.profileId == currentProfileId } &&
+                                            symptomEntries.value.none { it.profileId == currentProfileId } &&
+                                            stoolEntries.value.none { it.profileId == currentProfileId } &&
+                                            activeControls.value.isEmpty()) {
+                                            Text(
+                                                "No hay registros para este perfil",
+                                                modifier = Modifier.padding(16.dp),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                        }
                                     }
-
-                                if (foodEntries.value.none { it.profileId == currentProfileId } &&
-                                    symptomEntries.value.none { it.profileId == currentProfileId } &&
-                                    stoolEntries.value.none { it.profileId == currentProfileId } &&
-                                    activeControls.value.isEmpty()) {
-                                    Text(
-                                        "No hay registros para este perfil",
-                                        modifier = Modifier.padding(16.dp),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.secondary
-                                    )
+                                    else -> {
+                                        Text(
+                                            "Selecciona un perfil para ver los registros",
+                                            modifier = Modifier.padding(16.dp),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
                                 }
-                            }
-                            else -> {
-                                Text(
-                                    "Selecciona un perfil para ver los registros",
-                                    modifier = Modifier.padding(16.dp),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
                             }
                         }
                     }
                 }
+
             }
         }
     }
 
     // Dialogs
-    if (showRegistroDialog) {
+    /*if (showRegistroDialog) {
         AlertDialog(
             onDismissRequest = { showRegistroDialog = false },
             title = { Text("Seleccione un registro") },
@@ -532,7 +651,7 @@ fun HomePage(
                                 Button(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = PrimaryPinkDark,
+                                        containerColor = DarkGreen,
                                         contentColor = Color.White
                                     ),
                                     onClick = {
@@ -552,7 +671,7 @@ fun HomePage(
                                 Button(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = PrimaryPinkDark,
+                                        containerColor = DarkGreen,
                                         contentColor = Color.White
                                     ),
                                     onClick = {
@@ -572,7 +691,7 @@ fun HomePage(
                                 Button(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = PrimaryPinkDark,
+                                        containerColor = DarkGreen,
                                         contentColor = Color.White
                                     ),
                                     onClick = {
@@ -592,7 +711,7 @@ fun HomePage(
                                 Button(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = PrimaryPinkDark,
+                                        containerColor = DarkGreen,
                                         contentColor = Color.White
                                     ),
                                     onClick = {
@@ -621,7 +740,7 @@ fun HomePage(
                 }
             }
         )
-    }
+    }*/
 
     if (showAddProfileDialog) {
         AddProfileDialog(
@@ -633,6 +752,83 @@ fun HomePage(
         )
     }
 
+    if (showActiveControlDialog) {
+        AlertDialog(
+            onDismissRequest = { showActiveControlDialog = false },
+            containerColor = Color.White,
+            title = {
+                Text(
+                    text = "Control de Alérgeno Activo",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DarkGreen
+                )
+            },
+            text = {
+                val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    currentlyActiveControls.forEach { control ->
+                        val allergen = foodEntryViewModel.allergens.find { it.id == control.allergenId }
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MediumGreen.copy(alpha = 0.1f)
+                            ),
+                            border = BorderStroke(1.dp, MediumGreen)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Tipo: ${control.controlType.displayName}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = DarkGreen
+                                )
+                                Text(
+                                    text = "Alérgeno: ${allergen?.name ?: ""}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.DarkGray
+                                )
+                                Text(
+                                    text = "Desde: ${dateFormatter.format(control.startDateAsDate)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.DarkGray
+                                )
+                                Text(
+                                    text = "Hasta: ${dateFormatter.format(control.endDateAsDate)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.DarkGray
+                                )
+                                if (control.notes.isNotEmpty()) {
+                                    Text(
+                                        text = "Notas: ${control.notes}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.DarkGray
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showActiveControlDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MediumGreen
+                    )
+                ) {
+                    Text("Entendido")
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
+        )
+    }
 }
 
 @Composable

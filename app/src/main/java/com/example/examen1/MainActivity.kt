@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.examen1.viewmodels.ControlTypeViewModel
+import com.example.examen1.viewmodels.TagViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
         val symptomEntryViewModel: SymptomEntryViewModel by viewModels()
         val stoolEntryViewModel: StoolEntryViewModel by viewModels()
         val controlEntryViewModel: ControlTypeViewModel by viewModels()
+
         // Inicializa AuthViewModel con sus dependencias
         val authViewModel by viewModels<AuthViewModel> {
             object : ViewModelProvider.Factory {
@@ -88,7 +90,8 @@ class MainActivity : ComponentActivity() {
                         symptomEntryViewModel = symptomEntryViewModel,
                         stoolEntryViewModel = stoolEntryViewModel,
                         historyViewModel = historyViewModel,
-                        controlTypeViewModel = controlEntryViewModel
+                        controlTypeViewModel = controlEntryViewModel,
+                        tagViewModel = TagViewModel()
                     )
                 }
             }

@@ -31,7 +31,8 @@ class HistoryViewModel(
     fun searchRecords(
         startDate: Date = Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000), // Default to last 30 days
         endDate: Date = Date(),
-        recordType: RecordType = RecordType.ALL
+        recordType: RecordType = RecordType.ALL,
+        selectedTags: List<String> = emptyList()
     ) {
         viewModelScope.launch {
             try {
@@ -39,6 +40,9 @@ class HistoryViewModel(
 
                 val foodEntries = when (recordType) {
                     RecordType.ALL, RecordType.FOOD -> foodEntryViewModel.searchByDateRange(startDate, endDate)
+                        .filter { entry ->
+                            selectedTags.isEmpty() || entry.tagIds.any { it in selectedTags }
+                        }
                     else -> emptyList()
                 }
 

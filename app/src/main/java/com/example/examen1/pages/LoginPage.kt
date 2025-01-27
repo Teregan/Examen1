@@ -59,7 +59,9 @@ import com.example.examen1.R
 import com.example.examen1.components.ActionButton
 import com.example.examen1.components.InputField
 import com.example.examen1.components.Message
+import com.example.examen1.components.DecorativeCircles
 import com.example.examen1.ui.theme.DarkTextColor
+import com.example.examen1.ui.theme.LightGreen
 import com.example.examen1.ui.theme.PrimaryPink
 import com.example.examen1.ui.theme.PrimaryPinkBlended
 import com.example.examen1.ui.theme.PrimaryPinkDark
@@ -130,54 +132,56 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(*backgroundGradient)
-            )
+            .background(Color.White)
             .systemBarsPadding()
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
+        DecorativeCircles()
+
         Image(
             painter = painterResource(R.drawable.logo),
             contentDescription = null,
             modifier = Modifier
-                .size(250.dp)
-                .padding(start = 35.dp)
+                .size(120.dp)
+                .padding(vertical = 16.dp)
         )
         Spacer(modifier = Modifier.height(20.dp))
-        Message(
-            title = "Bienvenido",
-            subtitle = "Logueate para continuar"
+        Text(
+            text = "Bienvenido",
+            style = MaterialTheme.typography.headlineMedium,
+            color = DarkTextColor,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Logueate para continuar",
+            style = MaterialTheme.typography.bodyLarge,
+            color = DarkTextColor.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
 
         InputField(
             leadingIconRes = R.drawable.ic_person,
             placeholderText = "Email",
-            value = email,  // Añadir esto
-            onValueChange = { email = it },  // Añadir esto
-            modifier = Modifier.padding(horizontal = 24.dp)
+            value = email,
+            onValueChange = { email = it },
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         InputField(
             leadingIconRes = R.drawable.ic_key,
             placeholderText = "Clave",
-            value = password,  // Añadir esto
-            onValueChange = { password = it },  // Añadir esto
+            value = password,
+            onValueChange = { password = it },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.padding(horizontal = 24.dp)
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
 
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ActionButton(
-            text = if (isLoading) "Ingresando..." else "Ingresar",
-            isNavigationArrowVisible = true,
-            onClicked = {
+        Button(
+            onClick = {
                 if (email.isNotBlank() && password.isNotBlank()) {
                     authViewModel.login(email, password)
                 } else {
@@ -188,36 +192,53 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
                     ).show()
                 }
             },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(top = 32.dp, bottom = 16.dp)
+                .height(48.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryPinkDark,
+                containerColor = LightGreen,
                 contentColor = Color.White
             ),
-            shadowColor = PrimaryYellowDark,
-            modifier = Modifier.padding(24.dp),
+            shape = RoundedCornerShape(12.dp),
             enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
-        )
+        ) {
+            Text(
+                text = if (isLoading) "Ingresando..." else "Ingresar",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
         Separator(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 40.dp)
                 .height(62.dp)
         )
-        ActionButton(
-            text = "Crear una Cuenta",
-            isNavigationArrowVisible = false,
-            onClicked = {
-                navController.navigate("signup")
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryPinkLight,
-                contentColor = Color.White
-            ),
-            shadowColor = PrimaryPinkDark,
+        Row(
             modifier = Modifier
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 24.dp),
-            enabled = true
-        )
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "¿No tienes una cuenta?",
+                style = MaterialTheme.typography.bodyMedium,
+                color = DarkTextColor.copy(alpha = 0.7f)
+            )
+            TextButton(
+                onClick = { navController.navigate("signup") }
+            ) {
+                Text(
+                    text = "Regístrate",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LightGreen,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
     }
 }

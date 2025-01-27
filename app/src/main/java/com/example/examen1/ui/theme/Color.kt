@@ -27,3 +27,17 @@ val PrimaryGreen = Color(0xFF00c29f)
 val PrimaryGreenDark = Color(0xFF008b6c)
 
 val DarkTextColor = Color(0xFF132b4c)
+
+val LightGreen = Color(0xFF4CAF50)
+val MediumGreen = Color(0xFF2E7D32)
+val DarkGreen = Color(0xFF1B5E20)
+val LightBlue = Color(0xFFE3F2FD)
+val BackgroundGray = Color(0xFFF5F5F5)
+val TextFieldBg = Color(0xFFEEEEEE)
+
+val MainGreen = Color(0xFF4CAF50)
+val MainGreenDark = Color(0xFF2E7D32)
+val MainGreenLight = Color(0xFFE8F5E9)
+val CardBackground = Color(0xFFF5F5F5)
+val GradientStart = Color(0xFFBBE0BC)
+val GradientEnd = Color(0xFF74A675)

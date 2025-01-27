@@ -20,7 +20,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.examen1.components.ActionButton
 import com.example.examen1.models.SymptomEntryState
+import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.ui.theme.PrimaryPinkDark
 import com.example.examen1.viewmodels.SymptomEntryViewModel
 import java.text.SimpleDateFormat
@@ -93,34 +95,20 @@ fun SymptomEntryPage(
         }
     }
 
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text(if (entryId != null) "Editar Síntomas" else "Registrar Síntomas") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = PrimaryPinkDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
+
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(
+                text = if (entryId != null) "Editar Síntomas" else "Registrar Síntomas",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainGreen
+            )
+
             Text(
                 text = "Síntomas observados",
                 style = MaterialTheme.typography.titleMedium
@@ -242,8 +230,10 @@ fun SymptomEntryPage(
             )
 
             // Botón de guardar
-            Button(
-                onClick = {
+            ActionButton(
+                text = if (entryId != null) "Actualizar" else "Guardar",
+                isNavigationArrowVisible = false,
+                onClicked = {
                     val selectedSymptomIds = selectedSymptoms
                         .filter { it.isSelected }
                         .map { it.id }
@@ -269,13 +259,16 @@ fun SymptomEntryPage(
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = symptomEntryState.value != SymptomEntryState.Loading
-            ) {
-                Text(if (entryId != null) "Actualizar" else "Guardar")
-            }
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MainGreen,
+                    contentColor = Color.White
+                ),
+                shadowColor = MainGreen,
+                enabled = symptomEntryState.value != SymptomEntryState.Loading,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-    }
+
 
     // Diálogo para agregar síntoma personalizado
     if (showAddCustomSymptom) {

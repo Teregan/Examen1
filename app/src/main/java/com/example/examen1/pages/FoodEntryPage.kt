@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -28,9 +29,10 @@ import com.example.examen1.components.ActionButton
 
 import com.example.examen1.models.Allergen
 import com.example.examen1.models.FoodEntryState
-import com.example.examen1.ui.theme.PrimaryPinkDark
+import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.viewmodels.ControlTypeViewModel
 import com.example.examen1.viewmodels.FoodEntryViewModel
+import com.example.examen1.viewmodels.TagViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -42,7 +44,8 @@ fun FoodEntryPage(
     viewModel: FoodEntryViewModel,
     controlTypeViewModel: ControlTypeViewModel,
     entryId: String? = null,
-    profileId: String
+    profileId: String,
+    tagViewModel: TagViewModel
 ) {
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
@@ -56,6 +59,9 @@ fun FoodEntryPage(
     val activeControls = controlTypeViewModel.activeControls.observeAsState(initial = emptyList())
     val foodEntryState = viewModel.foodEntryState.observeAsState()
     val currentEntry = viewModel.currentEntry.observeAsState()
+
+    var selectedTagIds by remember { mutableStateOf<List<String>>(emptyList()) }
+    val availableTags = tagViewModel.tags.observeAsState(initial = emptyList())
 
     // Efecto para limpiar datos cuando es un nuevo registro
     LaunchedEffect(Unit) {
@@ -84,6 +90,7 @@ fun FoodEntryPage(
             selectedAllergens = viewModel.allergens.map { allergen ->
                 allergen.copy(isSelected = entry.allergens.contains(allergen.id))
             }
+            selectedTagIds = entry.tagIds ?: emptyList()
         }
     }
 
@@ -91,8 +98,12 @@ fun FoodEntryPage(
     LaunchedEffect(activeControls.value) {
         val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
         if (currentlyActiveControls.isNotEmpty()) {
-            selectedAllergens = selectedAllergens.map { allergen ->
-                allergen.copy(isSelected = currentlyActiveControls.any { it.allergenId == allergen.id })
+            // Mantener las selecciones existentes y solo preseleccionar los alérgenos de controles activos
+            selectedAllergens = viewModel.allergens.map { allergen ->
+                allergen.copy(
+                    isSelected = allergen.isSelected ||
+                            currentlyActiveControls.any { it.allergenId == allergen.id }
+                )
             }
         }
     }
@@ -120,38 +131,23 @@ fun FoodEntryPage(
         }
     }
 
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text(text = if (entryId != null) "Editar Registro" else "Nuevo Registro") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = PrimaryPinkDark,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        }
-    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp),
-            //verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(
+                text = if (entryId != null) "Editar Registro" else "Nuevo Registro",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MainGreen
+            )
             // Controles Activos
             if (activeControls.value.isNotEmpty()) {
                 Text(
-                    text = "Controles Activos",
-                    style = MaterialTheme.typography.titleMedium
+                    text = "(Preseleccionado por control activo)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 LazyRow(
@@ -160,9 +156,9 @@ fun FoodEntryPage(
                     items(activeControls.value) { control ->
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = PrimaryPinkDark.copy(alpha = 0.1f)
+                                containerColor = MainGreen.copy(alpha = 0.1f)
                             ),
-                            border = BorderStroke(1.dp, PrimaryPinkDark)
+                            border = BorderStroke(1.dp, MainGreen)
                         ) {
                             Column(
                                 modifier = Modifier.padding(8.dp),
@@ -171,7 +167,7 @@ fun FoodEntryPage(
                                 Text(
                                     text = control.controlType.name,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = PrimaryPinkDark
+                                    color = MainGreen
                                 )
                                 Text(
                                     text = viewModel.allergens.find { it.id == control.allergenId }?.name ?: "",
@@ -247,7 +243,43 @@ fun FoodEntryPage(
                         minLines = 3,
                         maxLines = 5
                     )
+                    // Sección de etiquetas
+                    Column {
+                        Text(
+                            text = "Etiquetas:",
+                            style = MaterialTheme.typography.titleMedium
+                        )
 
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            items(availableTags.value) { tag ->
+                                FilterChip(
+                                    selected = tag.id in selectedTagIds,
+                                    onClick = {
+                                        selectedTagIds = if (tag.id in selectedTagIds) {
+                                            selectedTagIds - tag.id
+                                        } else {
+                                            selectedTagIds + tag.id
+                                        }
+                                    },
+                                    label = { Text(tag.name) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex))
+                                    )
+                                )
+                            }
+                        }
+
+                        TextButton(
+                            onClick = { navController.navigate("tag_management") }
+                        ) {
+                            Icon(Icons.Default.Edit, null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Gestionar Etiquetas")
+                        }
+                    }
                     // Allergens Grid
                     Column {
                         Row(
@@ -295,9 +327,45 @@ fun FoodEntryPage(
                                             }
                                         }
                                     },
-                                    enabled = !hasActiveControl && entryId == null
+                                    enabled = true//!hasActiveControl && entryId == null
                                 )
                             }
+                        }
+                    }
+                    Column {
+                        Text(
+                            text = "Etiquetas:",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        ) {
+                            items(availableTags.value) { tag ->
+                                FilterChip(
+                                    selected = tag.id in selectedTagIds,
+                                    onClick = {
+                                        selectedTagIds = if (tag.id in selectedTagIds) {
+                                            selectedTagIds - tag.id
+                                        } else {
+                                            selectedTagIds + tag.id
+                                        }
+                                    },
+                                    label = { Text(tag.name) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex))
+                                    )
+                                )
+                            }
+                        }
+
+                        TextButton(
+                            onClick = { navController.navigate("tag_management") }
+                        ) {
+                            Icon(Icons.Default.Edit, null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Gestionar Etiquetas")
                         }
                     }
                 }
@@ -328,23 +396,26 @@ fun FoodEntryPage(
                             selectedDate,
                             selectedTime,
                             selectedAllergenIds,
-                            notes
+                            selectedTags = selectedTagIds,
+                            notes,
+                            profileId = profileId
                         )
                     } else {
                         viewModel.addFoodEntry(
                             selectedDate,
                             selectedTime,
                             selectedAllergenIds,
+                            selectedTags = selectedTagIds,
                             notes,
                             profileId = profileId
                         )
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryPinkDark,
+                    containerColor = MainGreen,
                     contentColor = Color.White
                 ),
-                shadowColor = PrimaryPinkDark,
+                shadowColor = MainGreen,
                 enabled = foodEntryState.value != FoodEntryState.Loading,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -355,7 +426,7 @@ fun FoodEntryPage(
                 )
             }
         }
-    }
+
 }
 
 @Composable
@@ -372,14 +443,14 @@ fun AllergenItem(
                 onClick = { onSelectionChanged(!allergen.isSelected) }
             ),
         border = if (allergen.isSelected) {
-            BorderStroke(2.dp, if (enabled) PrimaryPinkDark else PrimaryPinkDark.copy(alpha = 0.5f))
+            BorderStroke(2.dp, if (enabled) MainGreen else MainGreen.copy(alpha = 0.5f))
         } else {
             null
         },
         colors = CardDefaults.cardColors(
             containerColor = when {
                 !enabled -> MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
-                allergen.isSelected -> PrimaryPinkDark.copy(alpha = 0.1f)
+                allergen.isSelected -> MainGreen.copy(alpha = 0.1f)
                 else -> MaterialTheme.colorScheme.surface
             }
         )
@@ -397,7 +468,7 @@ fun AllergenItem(
                 modifier = Modifier.size(32.dp),
                 tint = when {
                     !enabled -> LocalContentColor.current.copy(alpha = 0.5f)
-                    allergen.isSelected -> PrimaryPinkDark
+                    allergen.isSelected -> MainGreen
                     else -> LocalContentColor.current
                 }
             )

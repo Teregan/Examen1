@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.examen1.components.AppScaffold
 import com.example.examen1.pages.*
 import com.example.examen1.viewmodels.*
 
@@ -21,7 +22,8 @@ fun MyAppNavigation(
     symptomEntryViewModel: SymptomEntryViewModel,
     stoolEntryViewModel: StoolEntryViewModel,
     historyViewModel: HistoryViewModel,
-    controlTypeViewModel: ControlTypeViewModel
+    controlTypeViewModel: ControlTypeViewModel,
+    tagViewModel: TagViewModel
 ) {
     val navController = rememberNavController()
 
@@ -32,57 +34,71 @@ fun MyAppNavigation(
         composable("signup") {
             SignupPage(modifier, navController, authViewModel)
         }
+
         composable("home") {
-            HomePage(
-                modifier = modifier,
-                navController = navController,
-                authViewModel = authViewModel,
-                activeProfileViewModel = activeProfileViewModel,
-                profileViewModel = profileViewModel,
-                foodEntryViewModel = foodEntryViewModel,
-                symptomEntryViewModel = symptomEntryViewModel,
-                stoolEntryViewModel = stoolEntryViewModel,
-                controlTypeViewModel = controlTypeViewModel
-            )
-        }
-        composable("profiles") {
-            ProfilesPage(
-                modifier = modifier,
-                navController = navController,
-                profileViewModel = profileViewModel,
-                activeProfileViewModel = activeProfileViewModel  // Agregar este parámetro
-            )
+            AppScaffold(navController, activeProfileViewModel) {
+                HomePage(
+                    modifier = modifier,
+                    navController = navController,
+                    authViewModel = authViewModel,
+                    activeProfileViewModel = activeProfileViewModel,
+                    profileViewModel = profileViewModel,
+                    foodEntryViewModel = foodEntryViewModel,
+                    symptomEntryViewModel = symptomEntryViewModel,
+                    stoolEntryViewModel = stoolEntryViewModel,
+                    controlTypeViewModel = controlTypeViewModel
+                )
+            }
         }
 
-        // Control de Alérgenos
+        composable("profiles") {
+            AppScaffold(navController, activeProfileViewModel) {
+                ProfilesPage(
+                    modifier = modifier,
+                    navController = navController,
+                    profileViewModel = profileViewModel,
+                    activeProfileViewModel = activeProfileViewModel
+                )
+            }
+        }
+
         composable(
             route = "control_type/{profileId}",
             arguments = listOf(navArgument("profileId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            ControlTypePage(
-                modifier = modifier,
-                navController = navController,
-                controlTypeViewModel = controlTypeViewModel,
-                foodEntryViewModel = foodEntryViewModel,
-                profileId = profileId
-            )
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            profileId?.let {
+                AppScaffold(navController, activeProfileViewModel) {
+                    ControlTypePage(
+                        modifier = modifier,
+                        navController = navController,
+                        controlTypeViewModel = controlTypeViewModel,
+                        foodEntryViewModel = foodEntryViewModel,
+                        profileId = it
+                    )
+                }
+            }
         }
 
-        // Rutas de Alimentación
         composable(
             route = "food_entry/{profileId}",
             arguments = listOf(navArgument("profileId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            FoodEntryPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = foodEntryViewModel,
-                controlTypeViewModel = controlTypeViewModel,
-                profileId = profileId
-            )
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            profileId?.let {
+                AppScaffold(navController, activeProfileViewModel) {
+                    FoodEntryPage(
+                        modifier = modifier,
+                        navController = navController,
+                        viewModel = foodEntryViewModel,
+                        controlTypeViewModel = controlTypeViewModel,
+                        profileId = it,
+                        tagViewModel = tagViewModel
+                    )
+                }
+            }
         }
+
         composable(
             route = "food_entry_edit/{entryId}/{profileId}",
             arguments = listOf(
@@ -90,31 +106,40 @@ fun MyAppNavigation(
                 navArgument("profileId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            FoodEntryPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = foodEntryViewModel,
-                controlTypeViewModel = controlTypeViewModel,
-                entryId = entryId,
-                profileId = profileId
-            )
+            val entryId = backStackEntry.arguments?.getString("entryId")
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            if (entryId != null && profileId != null) {
+                AppScaffold(navController, activeProfileViewModel) {
+                    FoodEntryPage(
+                        modifier = modifier,
+                        navController = navController,
+                        viewModel = foodEntryViewModel,
+                        controlTypeViewModel = controlTypeViewModel,
+                        entryId = entryId,
+                        profileId = profileId,
+                        tagViewModel = tagViewModel
+                    )
+                }
+            }
         }
 
-        // Rutas de Síntomas
         composable(
             route = "symptom_entry/{profileId}",
             arguments = listOf(navArgument("profileId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            SymptomEntryPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = symptomEntryViewModel,
-                profileId = profileId
-            )
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            profileId?.let {
+                AppScaffold(navController, activeProfileViewModel) {
+                    SymptomEntryPage(
+                        modifier = modifier,
+                        navController = navController,
+                        viewModel = symptomEntryViewModel,
+                        profileId = it
+                    )
+                }
+            }
         }
+
         composable(
             route = "symptom_entry_edit/{entryId}/{profileId}",
             arguments = listOf(
@@ -122,81 +147,93 @@ fun MyAppNavigation(
                 navArgument("profileId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            SymptomEntryPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = symptomEntryViewModel,
-                entryId = entryId,
-                profileId = profileId
-            )
+            val entryId = backStackEntry.arguments?.getString("entryId")
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            if (entryId != null && profileId != null) {
+                AppScaffold(navController, activeProfileViewModel) {
+                    SymptomEntryPage(
+                        modifier = modifier,
+                        navController = navController,
+                        viewModel = symptomEntryViewModel,
+                        entryId = entryId,
+                        profileId = profileId
+                    )
+                }
+            }
         }
 
-        // Rutas de Deposiciones
         composable(
             route = "stool_entry/{profileId}",
             arguments = listOf(navArgument("profileId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            StoolEntryPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = stoolEntryViewModel,
-                profileId = profileId
-            )
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            profileId?.let {
+                AppScaffold(navController, activeProfileViewModel) {
+                    StoolEntryPage(
+                        modifier = modifier,
+                        navController = navController,
+                        viewModel = stoolEntryViewModel,
+                        profileId = it
+                    )
+                }
+            }
         }
-        composable(
-            route = "stool_entry_edit/{entryId}/{profileId}",
-            arguments = listOf(
-                navArgument("entryId") { type = NavType.StringType },
-                navArgument("profileId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val entryId = backStackEntry.arguments?.getString("entryId") ?: return@composable
-            val profileId = backStackEntry.arguments?.getString("profileId") ?: return@composable
-            StoolEntryPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = stoolEntryViewModel,
-                entryId = entryId,
-                profileId = profileId
-            )
+
+        composable("monthly_calendar/{profileId}") { backStackEntry ->
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            profileId?.let {
+                AppScaffold(navController, activeProfileViewModel) {
+                    MonthlyCalendarPage(
+                        navController = navController,
+                        foodEntryViewModel = foodEntryViewModel,
+                        symptomEntryViewModel = symptomEntryViewModel,
+                        stoolEntryViewModel = stoolEntryViewModel,
+                        profileId = it
+                    )
+                }
+            }
         }
+
         composable("history") {
-            val historyViewModel: HistoryViewModel = viewModel(
-                factory = HistoryViewModelFactory(
-                    foodEntryViewModel,
-                    symptomEntryViewModel,
-                    stoolEntryViewModel,
-                    controlTypeViewModel  // Añadido
+            AppScaffold(navController, activeProfileViewModel) {
+                HistoryPage(
+                    modifier = modifier,
+                    navController = navController,
+                    historyViewModel = historyViewModel,
+                    activeProfileViewModel = activeProfileViewModel,
+                    tagViewModel = tagViewModel
                 )
-            )
-            HistoryPage(
-                modifier = modifier,
-                navController = navController,
-                historyViewModel = historyViewModel,
-                activeProfileViewModel = activeProfileViewModel
-            )
+            }
         }
+
         composable("food_correlation") {
-            val foodCorrelationViewModel: FoodCorrelationViewModel = viewModel(
-                factory = FoodCorrelationViewModelFactory(
-                    foodEntryViewModel,
-                    symptomEntryViewModel,
-                    stoolEntryViewModel,
-                    profileViewModel
+            AppScaffold(navController, activeProfileViewModel) {
+                FoodCorrelationPage(
+                    modifier = modifier,
+                    navController = navController,
+                    viewModel = viewModel(
+                        factory = FoodCorrelationViewModelFactory(
+                            foodEntryViewModel,
+                            symptomEntryViewModel,
+                            stoolEntryViewModel,
+                            profileViewModel
+                        )
+                    ),
+                    foodEntryViewModel = foodEntryViewModel,
+                    symptomEntryViewModel = symptomEntryViewModel,
+                    activeProfileViewModel = activeProfileViewModel,
+                    profileViewModel = profileViewModel
                 )
-            )
-            FoodCorrelationPage(
-                modifier = modifier,
-                navController = navController,
-                viewModel = foodCorrelationViewModel,
-                foodEntryViewModel = foodEntryViewModel,
-                symptomEntryViewModel = symptomEntryViewModel, // Agregar este parámetro
-                activeProfileViewModel = activeProfileViewModel,
-                profileViewModel = profileViewModel
-            )
+            }
+        }
+
+        composable("tag_management") {
+            AppScaffold(navController, activeProfileViewModel) {
+                TagManagementPage(
+                    navController = navController,
+                    viewModel = tagViewModel
+                )
+            }
         }
     }
 }

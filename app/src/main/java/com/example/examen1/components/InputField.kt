@@ -22,44 +22,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.examen1.ui.theme.DarkTextColor
+import com.example.examen1.ui.theme.LightGreen
+import com.example.examen1.ui.theme.TextFieldBg
 
 @Composable
 fun InputField(
     modifier: Modifier = Modifier,
-    value: String = "",  // Añadir esto
-    onValueChange: (String) -> Unit = {},  // Añadir esto
+    value: String = "",
+    onValueChange: (String) -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None,
     @DrawableRes leadingIconRes: Int,
     placeholderText: String
 ) {
-    var inputValue by remember { mutableStateOf("") }
-
     TextField(
         modifier = modifier
             .fillMaxWidth()
-            .height(62.dp),
-        value = value,  // Usar el value recibido
-        onValueChange = onValueChange,  // Usar el onValueChange recibido
+            .height(56.dp),
+        value = value,
+        onValueChange = onValueChange,
         visualTransformation = visualTransformation,
         singleLine = true,
-        shape = RoundedCornerShape(percent = 50),
+        shape = RoundedCornerShape(12.dp),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
-            errorIndicatorColor = Color.Transparent,
+            focusedContainerColor = TextFieldBg,
+            unfocusedContainerColor = TextFieldBg,
             focusedTextColor = DarkTextColor,
             unfocusedTextColor = DarkTextColor,
-            unfocusedPlaceholderColor = DarkTextColor,
-            focusedPlaceholderColor = DarkTextColor,
-            focusedLeadingIconColor = DarkTextColor,
-            unfocusedLeadingIconColor = DarkTextColor,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White
+            focusedLeadingIconColor = LightGreen,
+            unfocusedLeadingIconColor = DarkTextColor.copy(alpha = 0.6f)
         ),
-        textStyle = MaterialTheme.typography.bodyLarge.copy(
-            fontWeight = FontWeight.Medium
-        ),
+        textStyle = MaterialTheme.typography.bodyLarge,
         leadingIcon = {
             Icon(
                 painter = painterResource(leadingIconRes),
@@ -68,10 +62,10 @@ fun InputField(
             )
         },
         placeholder = {
-            Text(text = placeholderText)
-        },
-        label = {
-            Text(placeholderText)
+            Text(
+                text = placeholderText,
+                color = DarkTextColor.copy(alpha = 0.6f)
+            )
         }
     )
 }

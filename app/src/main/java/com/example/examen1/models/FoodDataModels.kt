@@ -7,7 +7,7 @@ data class Allergen(
     val id: String,
     val name: String,
     val iconResId: Int,
-    var isSelected: Boolean = false
+    var isSelected: Boolean = false,
 )
 
 data class FoodEntry(
@@ -18,7 +18,8 @@ data class FoodEntry(
     val time: String = "",
     val allergens: List<String> = emptyList(),
     val notes: String = "", // Volvemos a string con default vacío
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val tagIds: List<String> = emptyList()
 ) {
     // Solo mantenemos la propiedad para la fecha
     val date: Date

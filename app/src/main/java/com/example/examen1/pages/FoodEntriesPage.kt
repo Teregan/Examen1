@@ -19,7 +19,7 @@ import androidx.navigation.NavController
 import com.example.examen1.R
 import com.example.examen1.models.Allergen
 import com.example.examen1.models.FoodEntry
-import com.example.examen1.ui.theme.PrimaryPinkDark
+import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.viewmodels.FoodEntryViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -49,7 +49,7 @@ fun FoodEntriesPage(
                 }
             },
             colors = TopAppBarDefaults.smallTopAppBarColors(
-                containerColor = PrimaryPinkDark,
+                containerColor = MainGreen,
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White
             )
