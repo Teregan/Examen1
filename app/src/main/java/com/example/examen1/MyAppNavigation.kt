@@ -32,7 +32,7 @@ fun MyAppNavigation(
             LoginPage(modifier, navController, authViewModel, profileViewModel)
         }
         composable("signup") {
-            SignupPage(modifier, navController, authViewModel)
+            SignupPage(modifier, navController, authViewModel, profileViewModel)
         }
 
         composable("home") {

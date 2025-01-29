@@ -1,5 +1,6 @@
 package com.example.examen1.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,9 @@ import com.example.examen1.models.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -28,19 +32,25 @@ class ProfileViewModel : ViewModel() {
     }
 
     fun hasProfiles(): Boolean {
-        return !profiles.value.isNullOrEmpty()
+        return profiles.value?.isNotEmpty() == true
     }
 
-    private fun setupProfilesListener() {
+    fun setupProfilesListener() {
         val currentUserId = auth.currentUser?.uid ?: return
+
+        Log.d("ProfileViewModel", "Setting up profiles listener for user: $currentUserId")
 
         _profileState.value = ProfileState.Loading
 
+        // Limpiar el listener anterior si existe
+        profilesListener?.remove()
+
         profilesListener = firestore.collection("profiles")
             .whereEqualTo("userId", currentUserId)
-            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    Log.e("ProfileViewModel", "Error loading profiles", error)
                     _profileState.value = ProfileState.Error(error.message ?: "Error loading profiles")
                     return@addSnapshotListener
                 }
@@ -49,6 +59,7 @@ class ProfileViewModel : ViewModel() {
                     val profilesList = snapshot.documents.mapNotNull { doc ->
                         doc.toObject(UserProfile::class.java)?.copy(id = doc.id)
                     }
+
                     _profiles.value = profilesList
                     _profileState.value = ProfileState.Success
                 } else {
@@ -58,28 +69,28 @@ class ProfileViewModel : ViewModel() {
             }
     }
 
-    fun addProfile(profile: UserProfile) {
-        viewModelScope.launch {
-            try {
-                _profileState.value = ProfileState.Loading
-                val currentUserId = auth.currentUser?.uid ?: throw Exception("No user logged in")
+    fun addProfile(profile: UserProfile): Deferred<Boolean> = viewModelScope.async {
+        try {
+            _profileState.value = ProfileState.Loading
+            val currentUserId = auth.currentUser?.uid ?: throw Exception("No user logged in")
 
-                // Crear una copia del perfil con el userId actualizado
-                val profileData = profile.copy(
-                    userId = currentUserId,
-                    createdAt = System.currentTimeMillis()
-                )
+            // Crear una copia del perfil con el userId actualizado
+            val profileData = profile.copy(
+                userId = currentUserId,
+                createdAt = System.currentTimeMillis()
+            )
 
-                // Añadir el documento y obtener la referencia
-                val documentRef = firestore.collection("profiles")
-                    .add(profileData)
-                    .await()
+            // Añadir el documento y esperar a que se complete
+            firestore.collection("profiles")
+                .add(profileData)
+                .await()
 
-                // Actualizar el estado con éxito
-                _profileState.value = ProfileState.Success
-            } catch (e: Exception) {
-                _profileState.value = ProfileState.Error(e.message ?: "Error adding profile")
-            }
+            // Actualizar el estado con éxito
+            _profileState.value = ProfileState.Success
+            true
+        } catch (e: Exception) {
+            _profileState.value = ProfileState.Error(e.message ?: "Error adding profile")
+            false
         }
     }
 
@@ -134,9 +145,23 @@ class ProfileViewModel : ViewModel() {
                 _profileState.value = ProfileState.Loading
 
                 profile.id?.let { id ->
+                    // Obtener el perfil actual para mantener los campos que no se modifican
+                    val currentProfile = firestore.collection("profiles")
+                        .document(id)
+                        .get()
+                        .await()
+                        .toObject(UserProfile::class.java)
+
+                    // Crear el perfil actualizado manteniendo los campos originales
+                    val updatedProfile = profile.copy(
+                        userId = currentProfile?.userId ?: profile.userId,
+                        createdAt = currentProfile?.createdAt ?: profile.createdAt
+                    )
+
+                    // Actualizar el documento
                     firestore.collection("profiles")
                         .document(id)
-                        .set(profile)
+                        .set(updatedProfile)
                         .await()
 
                     _profileState.value = ProfileState.Success

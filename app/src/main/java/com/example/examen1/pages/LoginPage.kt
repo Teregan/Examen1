@@ -1,5 +1,6 @@
 package com.example.examen1.pages
 
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
@@ -60,6 +61,7 @@ import com.example.examen1.components.ActionButton
 import com.example.examen1.components.InputField
 import com.example.examen1.components.Message
 import com.example.examen1.components.DecorativeCircles
+import com.example.examen1.models.ProfileState
 import com.example.examen1.ui.theme.DarkTextColor
 import com.example.examen1.ui.theme.LightGreen
 import com.example.examen1.ui.theme.PrimaryPink
@@ -71,10 +73,14 @@ import com.example.examen1.ui.theme.PrimaryYellowDark
 import com.example.examen1.ui.theme.PrimaryYellowLight
 import com.example.examen1.viewmodels.ProfileViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 
 @Composable
-fun LoginPage (modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel,
-               profileViewModel: ProfileViewModel
+fun LoginPage (
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    authViewModel: AuthViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     val backgroundGradient = arrayOf(
         0f to PrimaryPinkBlended,
@@ -101,33 +107,47 @@ fun LoginPage (modifier: Modifier = Modifier, navController: NavController, auth
         isLoading = false
     }
 
-    LaunchedEffect(authState.value) {
-        when(authState.value) {
+    LaunchedEffect(authState.value, profileViewModel.profiles.value) {
+        when(val currentAuthState = authState.value) {
             is AuthState.Authenticated -> {
                 isLoading = true
-                delay(500) // Dar tiempo para que se carguen los perfiles
+                // Añadir un delay más largo para asegurar que los perfiles se carguen
+                delay(1000) // Aumentar a 1 segundo
+
+                // Esperar explícitamente a que el ProfileViewModel esté listo
+                withTimeout(2000) { // Timeout de 2 segundos
+                    while (profileViewModel.profileState.value == ProfileState.Loading) {
+                        delay(100)
+                    }
+                }
+
+                val profiles = profileViewModel.profiles.value
+
                 navController.navigate("home") {
                     popUpTo("login") { inclusive = true }
                 }
+
                 isLoading = false
             }
             is AuthState.Error -> {
+                Log.e("LoginPage", "Authentication Error: ${currentAuthState.message}")
                 Toast.makeText(
                     context,
-                    (authState.value as AuthState.Error).message,
+                    currentAuthState.message,
                     Toast.LENGTH_SHORT
                 ).show()
                 isLoading = false
             }
             is AuthState.Loading -> {
+                Log.d("LoginPage", "Authentication State: Loading")
                 isLoading = true
             }
             else -> {
+                Log.d("LoginPage", "Authentication State: Other")
                 isLoading = false
             }
         }
     }
-
 
     Column(
         modifier = modifier

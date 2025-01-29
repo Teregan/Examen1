@@ -132,17 +132,8 @@ fun HomePage(
         val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
         showActiveControlDialog = currentlyActiveControls.isNotEmpty()
     }
-    LaunchedEffect(profiles.value) {
-        if (profiles.value.isEmpty()) {
-            showAddProfileDialog = true
-        }
-    }
-    if (profiles.value.isEmpty()) {
-        NoProfilesView(
-            onCreateProfile = { showAddProfileDialog = true },
-            navController = navController
-        )
-    } else if (showSettingsContent) {
+
+    if (showSettingsContent) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -743,11 +734,13 @@ fun HomePage(
     }*/
 
     if (showAddProfileDialog) {
-        AddProfileDialog(
+        ProfileDialog(
+            profile = null, // null porque es un nuevo perfil
             onDismiss = { showAddProfileDialog = false },
-            onAdd = { profile ->
+            onSave = { profile ->
                 profileViewModel.addProfile(profile)
-                showAddProfileDialog = false
+                // No necesitamos cerrar el diálogo aquí porque se cerrará
+                // automáticamente cuando el profileState cambie a Success
             }
         )
     }
@@ -831,37 +824,3 @@ fun HomePage(
     }
 }
 
-@Composable
-private fun NoProfilesView(
-    onCreateProfile: () -> Unit,
-    navController: NavController
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "¡Bienvenido!",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Para comenzar, necesitas crear un perfil",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onCreateProfile,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryPinkDark,
-                contentColor = Color.White
-            )
-        ) {
-            Text("Crear Primer Perfil")
-        }
-    }
-}

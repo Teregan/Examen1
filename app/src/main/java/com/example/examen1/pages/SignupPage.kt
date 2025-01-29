@@ -1,5 +1,6 @@
 package com.example.examen1.pages
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,14 +44,19 @@ import com.example.examen1.AuthViewModel
 import com.example.examen1.R
 import com.example.examen1.components.DecorativeCircles
 import com.example.examen1.components.InputField
+import com.example.examen1.models.ProfileState
 import com.example.examen1.ui.theme.DarkTextColor
 import com.example.examen1.ui.theme.LightGreen
+import com.example.examen1.viewmodels.ProfileViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 
 @Composable
 fun SignupPage(
     modifier: Modifier = Modifier,
     navController: NavController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -58,14 +64,31 @@ fun SignupPage(
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(authState.value) {
+    LaunchedEffect(authState.value, profileViewModel.profiles.value) {
         when (authState.value) {
             is AuthState.Authenticated -> {
                 isLoading = true
-                navController.navigate("home") {
-                    popUpTo("signup") { inclusive = true }
+
+                // Esperar a que los perfiles se carguen
+                try {
+                    withTimeout(5000) { // 5 segundos de timeout
+                        while (profileViewModel.profiles.value?.isEmpty() == true) {
+                            delay(100)
+                        }
+                    }
+
+                    navController.navigate("home") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SignupPage", "Error waiting for profiles: ${e.message}")
+                    // Aún así navegamos al home, ya que el perfil debería estar creado
+                    navController.navigate("home") {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                } finally {
+                    isLoading = false
                 }
-                isLoading = false
             }
             is AuthState.Error -> {
                 Toast.makeText(

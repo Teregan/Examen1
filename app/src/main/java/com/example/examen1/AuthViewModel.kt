@@ -3,8 +3,13 @@ package com.example.examen1
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.examen1.models.ProfileType
+import com.example.examen1.models.UserProfile
 import com.example.examen1.viewmodels.*
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class AuthViewModel(
     private val profileViewModel: ProfileViewModel,
@@ -22,48 +27,70 @@ class AuthViewModel(
         checkAuthStatus()
     }
 
-    fun checkAuthStatus(){
-        if(auth.currentUser==null){
+    fun checkAuthStatus() {
+        if(auth.currentUser == null) {
             _authState.value = AuthState.Unauthenticated
-        }else{
+        } else {
+            profileViewModel.setupProfilesListener() // Asegurar que el listener esté configurado
             _authState.value = AuthState.Authenticated
         }
     }
 
-    fun login(email : String, password : String){
-
-        if(email.isEmpty() || password.isEmpty()){
-            _authState.value = AuthState.Error("Email or password can´t be empty")
+    fun login(email: String, password: String) {
+        if(email.isEmpty() || password.isEmpty()) {
+            _authState.value = AuthState.Error("Email or password can't be empty")
             return
         }
 
         _authState.value = AuthState.Loading
-        auth.signInWithEmailAndPassword(email,password)
-            .addOnCompleteListener{task->
-                if(task.isSuccessful){
-                    _authState.value = AuthState.Authenticated
-                }else{
-                    _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
-                }
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener { result ->
+                // Asegurarnos de que el ProfileViewModel tenga tiempo de configurarse
+                profileViewModel.setupProfilesListener() // Forzar la configuración del listener
+                _authState.value = AuthState.Authenticated
+            }
+            .addOnFailureListener { exception ->
+                _authState.value = AuthState.Error(exception.message ?: "Something went wrong")
             }
     }
 
-    fun signup(email : String, password : String){
-
-        if(email.isEmpty() || password.isEmpty()){
-            _authState.value = AuthState.Error("Email or password can´t be empty")
+    fun signup(email: String, password: String) {
+        if (email.isEmpty() || password.isEmpty()) {
+            _authState.value = AuthState.Error("Email or password can't be empty")
             return
         }
 
-        _authState.value = AuthState.Loading
-        auth.createUserWithEmailAndPassword(email,password)
-            .addOnCompleteListener{task->
-                if(task.isSuccessful){
+        viewModelScope.launch {
+            try {
+                _authState.value = AuthState.Loading
+
+                // Crear el usuario
+                val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+
+                // Configurar el listener de perfiles
+                profileViewModel.setupProfilesListener()
+
+                // Crear un perfil predeterminado
+                val defaultProfile = UserProfile(
+                    name = "Perfil Principal",
+                    userId = authResult.user?.uid ?: "",
+                    profileType = ProfileType.MOTHER,
+                    createdAt = System.currentTimeMillis()
+                )
+
+                // Esperar a que se complete la creación del perfil
+                val profileCreated = profileViewModel.addProfile(defaultProfile).await()
+
+                if (profileCreated) {
                     _authState.value = AuthState.Authenticated
-                }else{
-                    _authState.value = AuthState.Error(task.exception?.message?:"Something went wrong")
+                } else {
+                    _authState.value = AuthState.Error("Error creating default profile")
                 }
+
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Something went wrong")
             }
+        }
     }
 
     fun signout(){

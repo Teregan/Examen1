@@ -7,6 +7,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -35,6 +39,7 @@ fun ProfilesPage(
     activeProfileViewModel: ActiveProfileViewModel
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var profileToEdit by remember { mutableStateOf<UserProfile?>(null) }
     val profiles = profileViewModel.profiles.observeAsState(initial = emptyList())
     val profileState = profileViewModel.profileState.observeAsState()
     val context = LocalContext.current
@@ -45,6 +50,8 @@ fun ProfilesPage(
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
             }
             is ProfileState.Success -> {
+                showAddDialog = false
+                profileToEdit = null
                 // Si es el primer perfil creado, establecerlo como activo y navegar al home
                 if (profiles.value.size == 1) {
                     profiles.value.firstOrNull()?.let { profile ->
@@ -58,85 +65,72 @@ fun ProfilesPage(
             else -> Unit
         }
     }
-    Column(
-        modifier = modifier.fillMaxSize()
-    ){
-        SmallTopAppBar(
-            title = { Text("Perfiles Familiares") },
-            navigationIcon = {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Volver"
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.smallTopAppBarColors(
-                containerColor = PrimaryPinkDark,
-                titleContentColor = Color.White,
-                navigationIconContentColor = Color.White
-            )
-        )
 
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(16.dp)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Header con título y botón de añadir
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Header
             Text(
                 text = "Perfiles Familiares",
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
+                color = MainGreen
             )
+        }
 
-            // Add Profile Button
-            ActionButton(
-                text = "Agregar Nuevo Perfil",
-                isNavigationArrowVisible = true,
-                onClicked = { showAddDialog = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryPinkDark,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shadowColor = PrimaryPinkDark,
-                enabled = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+        // Botón de Agregar Perfil
+        ActionButton(
+            text = "Agregar Nuevo Perfil",
+            isNavigationArrowVisible = true,
+            onClicked = { showAddDialog = true },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MainGreen,
+                contentColor = Color.White
+            ),
+            shadowColor = MainGreen,
+            enabled = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            // Profiles List
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(profiles.value) { profile ->
-                    ProfileCard(
-                        profile = profile,
-                        onDelete = { profileViewModel.deleteProfile(profile.id) }
-                    )
-                }
+        // Lista de perfiles
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            items(profiles.value) { profile ->
+                ProfileCard(
+                    profile = profile,
+                    onEdit = { profileToEdit = profile },
+                    onDelete = { profileViewModel.deleteProfile(profile.id) }
+                )
             }
         }
     }
 
-
-    // Add Profile Dialog
-    /*if (showAddDialog) {
-        AddProfileDialog(
-            onDismiss = { showAddDialog = false },
-            onAdd = { profile ->
-                profileViewModel.addProfile(profile)
+    // Diálogo para añadir/editar perfil
+    if (showAddDialog || profileToEdit != null) {
+        ProfileDialog(
+            profile = profileToEdit,
+            onDismiss = {
                 showAddDialog = false
-            }
-        )
-    }*/
-    if (showAddDialog) {
-        AddProfileDialog(
-            onDismiss = { showAddDialog = false },
-            onAdd = { profile ->
-                profileViewModel.addProfile(profile)
-                // No cerramos el diálogo aquí, se cerrará cuando el profileState cambie a Success
+                profileToEdit = null
+            },
+            onSave = { profile ->
+                if (profileToEdit != null) {
+                    profileViewModel.updateProfile(profile.copy(id = profileToEdit!!.id))
+                } else {
+                    profileViewModel.addProfile(profile)
+                }
             }
         )
     }
@@ -145,76 +139,125 @@ fun ProfilesPage(
 @Composable
 fun ProfileCard(
     profile: UserProfile,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    var showErrorDialog by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        // ... resto del código del Card ...
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (profile.profileType == ProfileType.MOTHER)
+                            Icons.Default.Person else Icons.Default.Face,
+                        contentDescription = null,
+                        tint = MainGreen
+                    )
+                    Text(
+                        text = profile.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
 
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("¿Estás seguro de eliminar este perfil?") },
-                text = { Text("Esta acción no se puede deshacer.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            try {
-                                onDelete()
-                                showDialog = false
-                            } catch (e: Exception) {
-                                errorMessage = e.message ?: "Error al eliminar el perfil"
-                                showErrorDialog = true
-                            }
-                        }
-                    ) {
-                        Text("Eliminar")
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = MainGreen
+                        )
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text("Cancelar")
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            tint = Color.Red
+                        )
                     }
                 }
-            )
-        }
+            }
 
-        if (showErrorDialog) {
-            AlertDialog(
-                onDismissRequest = { showErrorDialog = false },
-                title = { Text("Error") },
-                text = { Text(errorMessage) },
-                confirmButton = {
-                    TextButton(onClick = { showErrorDialog = false }) {
-                        Text("Aceptar")
-                    }
-                }
+            // Información adicional del perfil
+            Text(
+                text = "Tipo: ${if (profile.profileType == ProfileType.MOTHER) "Madre" else "Infante"}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (profile.profileType == ProfileType.INFANT) {
+                Text(
+                    text = "Lactante: ${if (profile.isNursing == true) "Sí" else "No"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("¿Eliminar perfil?") },
+            text = { Text("Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Eliminar", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
 @Composable
-fun AddProfileDialog(
+fun ProfileDialog(
+    profile: UserProfile? = null,
     onDismiss: () -> Unit,
-    onAdd: (UserProfile) -> Unit
+    onSave: (UserProfile) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var profileType by remember { mutableStateOf(ProfileType.INFANT) }
-    var isNursing by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf(profile?.name ?: "") }
+    var profileType by remember { mutableStateOf(profile?.profileType ?: ProfileType.INFANT) }
+    var isNursing by remember { mutableStateOf(profile?.isNursing ?: false) }
     var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Agregar Nuevo Perfil") },
+        title = {
+            Text(
+                text = if (profile != null) "Editar Perfil" else "Nuevo Perfil",
+                color = MainGreen
+            )
+        },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedTextField(
                     value = name,
@@ -224,7 +267,13 @@ fun AddProfileDialog(
                     },
                     label = { Text("Nombre") },
                     isError = isError,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MainGreen,
+                        focusedLabelColor = MainGreen,
+                        unfocusedBorderColor = Color.Gray,
+                        unfocusedLabelColor = Color.Gray
+                    )
                 )
 
                 if (isError) {
@@ -236,38 +285,45 @@ fun AddProfileDialog(
                 }
 
                 // Tipo de Perfil
-                Column {
-                    Text(
-                        text = "Tipo de Perfil",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                Text(
+                    text = "Tipo de Perfil",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = profileType == ProfileType.INFANT,
+                        onClick = { profileType = ProfileType.INFANT },
+                        label = { Text("Infante") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MainGreen,
+                            selectedLabelColor = Color.White
+                        )
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = profileType == ProfileType.INFANT,
-                            onClick = { profileType = ProfileType.INFANT },
-                            label = { Text("Infante") }
+                    FilterChip(
+                        selected = profileType == ProfileType.MOTHER,
+                        onClick = { profileType = ProfileType.MOTHER },
+                        label = { Text("Madre") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MainGreen,
+                            selectedLabelColor = Color.White
                         )
-                        FilterChip(
-                            selected = profileType == ProfileType.MOTHER,
-                            onClick = { profileType = ProfileType.MOTHER },
-                            label = { Text("Madre") }
-                        )
-                    }
+                    )
                 }
 
                 // Opción de lactancia solo para infantes
                 AnimatedVisibility(visible = profileType == ProfileType.INFANT) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
                             checked = isNursing,
-                            onCheckedChange = { isNursing = it }
+                            onCheckedChange = { isNursing = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MainGreen
+                            )
                         )
                         Text(
                             text = "¿Es lactante?",
@@ -284,15 +340,21 @@ fun AddProfileDialog(
                         isError = true
                         return@TextButton
                     }
-                    val profile = UserProfile(
+                    val updatedProfile = UserProfile(
+                        id = profile?.id ?: "",
+                        userId = profile?.userId ?: "", // Mantener el userId original
                         name = name.trim(),
                         profileType = profileType,
-                        isNursing = if (profileType == ProfileType.INFANT) isNursing else null
+                        isNursing = if (profileType == ProfileType.INFANT) isNursing else null,
+                        createdAt = profile?.createdAt ?: System.currentTimeMillis() // Mantener la fecha original
                     )
-                    onAdd(profile)
+                    onSave(updatedProfile)
                 }
             ) {
-                Text("Agregar")
+                Text(
+                    text = if (profile != null) "Actualizar" else "Guardar",
+                    color = MainGreen
+                )
             }
         },
         dismissButton = {
