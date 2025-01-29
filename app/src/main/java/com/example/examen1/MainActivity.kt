@@ -23,7 +23,10 @@ import androidx.activity.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.examen1.utils.image.ImageManager
 import com.example.examen1.viewmodels.ControlTypeViewModel
+import com.example.examen1.viewmodels.StoolEntryViewModelFactory
+import com.example.examen1.viewmodels.SymptomEntryViewModelFactory
 import com.example.examen1.viewmodels.TagViewModel
 
 class MainActivity : ComponentActivity() {
@@ -34,7 +37,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
 
-
+        val imageManager = ImageManager(applicationContext)
         val profileViewModel: ProfileViewModel by viewModels()
         val activeProfileViewModel by viewModels<ActiveProfileViewModel> {
             object : ViewModelProvider.Factory {
@@ -45,8 +48,15 @@ class MainActivity : ComponentActivity() {
             }
         }
         val foodEntryViewModel: FoodEntryViewModel by viewModels()
-        val symptomEntryViewModel: SymptomEntryViewModel by viewModels()
-        val stoolEntryViewModel: StoolEntryViewModel by viewModels()
+        // Usa el nuevo factory para SymptomEntryViewModel
+        val symptomEntryViewModel: SymptomEntryViewModel by viewModels {
+            SymptomEntryViewModelFactory.provideFactory(imageManager)
+        }
+
+        // Usa el nuevo factory para StoolEntryViewModel
+        val stoolEntryViewModel: StoolEntryViewModel by viewModels {
+            StoolEntryViewModelFactory.provideFactory(imageManager)
+        }
         val controlEntryViewModel: ControlTypeViewModel by viewModels()
 
         // Inicializa AuthViewModel con sus dependencias

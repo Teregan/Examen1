@@ -179,6 +179,28 @@ fun MyAppNavigation(
             }
         }
 
+        composable(
+            route = "stool_entry_edit/{entryId}/{profileId}",
+            arguments = listOf(
+                navArgument("entryId") { type = NavType.StringType },
+                navArgument("profileId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val entryId = backStackEntry.arguments?.getString("entryId")
+            val profileId = backStackEntry.arguments?.getString("profileId")
+            if (entryId != null && profileId != null) {
+                AppScaffold(navController, activeProfileViewModel) {
+                    StoolEntryPage(
+                        modifier = modifier,
+                        navController = navController,
+                        viewModel = stoolEntryViewModel,
+                        entryId = entryId,
+                        profileId = profileId
+                    )
+                }
+            }
+        }
+
         composable("monthly_calendar/{profileId}") { backStackEntry ->
             val profileId = backStackEntry.arguments?.getString("profileId")
             profileId?.let {
@@ -232,6 +254,24 @@ fun MyAppNavigation(
                 TagManagementPage(
                     navController = navController,
                     viewModel = tagViewModel
+                )
+            }
+        }
+
+        composable("statistics") {
+            AppScaffold(navController, activeProfileViewModel) {
+                StatisticsPage(
+                    modifier = modifier,
+                    navController = navController,
+                    viewModel = viewModel(
+                        factory = StatisticsViewModelFactory(
+                            foodEntryViewModel,
+                            symptomEntryViewModel,
+                            stoolEntryViewModel,
+                            profileViewModel
+                        )
+                    ),
+                    profileViewModel = profileViewModel
                 )
             }
         }

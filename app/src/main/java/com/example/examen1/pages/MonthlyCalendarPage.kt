@@ -1,5 +1,6 @@
 package com.example.examen1.pages
 
+import PDFService
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -107,7 +108,13 @@ fun MonthlyCalendarPage(
             )
         }
     }
-
+    val pdfService = remember {
+        PDFService(
+            context = context,
+            foodEntryViewModel = foodEntryViewModel,
+            symptomEntryViewModel = symptomEntryViewModel
+        )
+    }
 
         Column(
             modifier = Modifier
@@ -138,17 +145,38 @@ fun MonthlyCalendarPage(
                     color = MainGreen
                 )
 
-                IconButton(onClick = {
-                    currentMonth = Calendar.getInstance().apply {
-                        time = currentMonth.time
-                        add(Calendar.MONTH, 1)
+                Row {
+                    // Botón de exportar PDF
+                    IconButton(
+                        onClick = {
+                            pdfService.generateMonthlyCalendarPDF(
+                                currentMonth,
+                                daysData,
+                                foodEntries.value,
+                                symptomEntries.value,
+                                stoolEntries.value
+                            )
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Exportar PDF",
+                            tint = MainGreen
+                        )
                     }
-                }) {
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "Mes siguiente",
-                        tint = MainGreen
-                    )
+
+                    IconButton(onClick = {
+                        currentMonth = Calendar.getInstance().apply {
+                            time = currentMonth.time
+                            add(Calendar.MONTH, 1)
+                        }
+                    }) {
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Mes siguiente",
+                            tint = MainGreen
+                        )
+                    }
                 }
             }
             // Leyenda

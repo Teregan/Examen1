@@ -92,4 +92,7 @@ dependencies {
     // Para el almacenamiento de archivos
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.fragment:fragment-ktx:1.3.6")
+    implementation ("androidx.compose.material:material-icons-extended:1.5.4")
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
 }

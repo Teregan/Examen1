@@ -28,7 +28,8 @@ data class StoolEntry(
     val stoolType: StoolType = StoolType.NORMAL,
     val color: StoolColor = StoolColor.BROWN,
     val notes: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val imagesPaths: List<String> = emptyList()
 ) {
     val date: Date
         get() = timestamp.toDate()

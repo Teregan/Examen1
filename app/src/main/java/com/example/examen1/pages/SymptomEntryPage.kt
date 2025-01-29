@@ -2,9 +2,15 @@ package com.example.examen1.pages
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -15,18 +21,24 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
+import com.example.examen1.components.ImagePicker
 import com.example.examen1.models.SymptomEntryState
 import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.ui.theme.PrimaryPinkDark
 import com.example.examen1.viewmodels.SymptomEntryViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +63,7 @@ fun SymptomEntryPage(
 
     val symptomEntryState = viewModel.symptomEntryState.observeAsState()
     val currentEntry = viewModel.currentEntry.observeAsState()
+    val selectedImages = viewModel.selectedImages.collectAsState()
 
     // Efecto para limpiar datos cuando es un nuevo registro
     LaunchedEffect(Unit) {
@@ -92,6 +105,12 @@ fun SymptomEntryPage(
                 Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
             }
             else -> Unit
+        }
+    }
+
+    LaunchedEffect(entryId) {
+        entryId?.let {
+            viewModel.loadSymptomEntry(it)  // o loadStoolEntry(it)
         }
     }
 
@@ -228,6 +247,78 @@ fun SymptomEntryPage(
                 minLines = 3,
                 maxLines = 5
             )
+
+            // Sección de imágenes
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Imágenes",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    ImagePicker(
+                        onImageSelected = { uri -> viewModel.addImage(uri, entryId ?: "") },
+                        currentImagesCount = selectedImages.value.size
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Mostrar imágenes seleccionadas
+                    if (selectedImages.value.isNotEmpty()) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(selectedImages.value) { imagePath ->
+                                Box {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(File(imagePath))
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(100.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                    )
+
+                                    // Botón de eliminar
+                                    IconButton(
+                                        onClick = { viewModel.removeImage(imagePath) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(24.dp)
+                                            .background(
+                                                color = Color.Black.copy(alpha = 0.5f),
+                                                shape = CircleShape
+                                            )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Eliminar imagen",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Contador de imágenes
+                        Text(
+                            text = "${selectedImages.value.size}/3 imágenes",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
 
             // Botón de guardar
             ActionButton(

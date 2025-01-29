@@ -209,7 +209,11 @@ fun HistoryPage(
                                 selectedTags = selectedTags
                             )
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MainGreen,
+                            contentColor = Color.White
+                        )
                     ) {
                         Text("Buscar")
                     }
@@ -239,6 +243,7 @@ fun HistoryPage(
                                     date = entry.date,
                                     time = entry.time,
                                     icon = Icons.Default.Star,
+                                    hasImages = false,
                                     onEdit = {
                                         val profileId = activeProfileState.value?.let {
                                             (it as? ActiveProfileState.Success)?.profile?.id
@@ -260,6 +265,7 @@ fun HistoryPage(
                                     date = entry.date,
                                     time = entry.time,
                                     icon = Icons.Default.Info,
+                                    hasImages = entry.imagesPaths.isNotEmpty(),
                                     onEdit = {
                                         navController.navigate("symptom_entry_edit/${entry.id}/$profileId")
                                     }
@@ -278,6 +284,7 @@ fun HistoryPage(
                                     date = entry.date,
                                     time = entry.time,
                                     icon = Icons.Default.Check,
+                                    hasImages = entry.imagesPaths.isNotEmpty(),
                                     onEdit = {
                                         navController.navigate("stool_entry_edit/${entry.id}/$profileId")
                                     }
@@ -321,6 +328,7 @@ private fun HistoryEntryCard(
     date: Date,
     time: String,
     icon: ImageVector,
+    hasImages: Boolean = false,
     tags: List<Tag> = emptyList(),
     onEdit: () -> Unit
 ) {
@@ -332,7 +340,23 @@ private fun HistoryEntryCard(
             modifier = Modifier.padding(16.dp)
         ) {
             ListItem(
-                headlineContent = { Text(title) },
+                headlineContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(title)
+                        // Indicador de imágenes
+                        if (hasImages) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = "Contiene imágenes",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                },
                 supportingContent = { Text(time) },
                 leadingContent = { Icon(icon, contentDescription = null) },
                 trailingContent = { Text(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)) }

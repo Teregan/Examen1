@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -22,36 +21,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.examen1.models.ActiveProfileState
 import com.example.examen1.models.FoodCorrelationState
-import com.example.examen1.ui.theme.PrimaryPinkDark
 import com.example.examen1.viewmodels.*
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.example.examen1.R
 import com.example.examen1.models.ProfileType
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path as AndroidPath
 import android.graphics.PointF
 import android.graphics.RectF
-import androidx.compose.ui.platform.LocalContext
 import com.example.examen1.ui.theme.MainGreen
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -390,9 +376,9 @@ fun FoodCorrelationPage(
 }
 
 @Composable
-fun PieChart(
+private fun PieChart(
     title: String,
-    data: Map<String, Int>,
+    data: MutableMap<String, Int>,
     onBitmapCreated: (Bitmap?) -> Unit = {}
 ) {
     val context = LocalContext.current

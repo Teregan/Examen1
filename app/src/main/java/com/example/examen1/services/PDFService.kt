@@ -6,12 +6,17 @@ import android.os.Environment
 import android.view.View
 import androidx.compose.ui.graphics.asAndroidBitmap
 import com.example.examen1.models.FoodCorrelation
+import com.example.examen1.models.FoodEntry
+import com.example.examen1.models.StoolEntry
+import com.example.examen1.models.SymptomEntry
+import com.example.examen1.pages.DayData
 import com.example.examen1.viewmodels.FoodEntryViewModel
 import com.example.examen1.viewmodels.SymptomEntryViewModel
 import com.itextpdf.io.image.ImageDataFactory
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.element.Image
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Table
@@ -195,5 +200,197 @@ class PDFService(
             "${context.packageName}.provider",
             file
         )
+    }
+
+    fun generateMonthlyCalendarPDF(
+        currentMonth: Calendar,
+        daysData: List<DayData>,
+        foodEntries: List<FoodEntry>,
+        symptomEntries: List<SymptomEntry>,
+        stoolEntries: List<StoolEntry>
+    ) {
+        try {
+            val dateFormatter = SimpleDateFormat("MMMM yyyy", Locale("es", "ES"))
+            val dayFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val fileName = "calendario_${dateFormatter.format(currentMonth.time)}.pdf"
+            val filePath = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), fileName)
+
+            // Definir el rango de fechas para el mes actual
+            val startOfMonth = Calendar.getInstance().apply {
+                time = currentMonth.time
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.time
+
+            val endOfMonth = Calendar.getInstance().apply {
+                time = currentMonth.time
+                set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH))
+                set(Calendar.HOUR_OF_DAY, 23)
+                set(Calendar.MINUTE, 59)
+                set(Calendar.SECOND, 59)
+                set(Calendar.MILLISECOND, 999)
+            }.time
+
+            // Filtrar entradas para el mes actual
+            val monthFoodEntries = foodEntries.filter {
+                it.date in startOfMonth..endOfMonth
+            }
+            val monthSymptomEntries = symptomEntries.filter {
+                it.date in startOfMonth..endOfMonth
+            }
+            val monthStoolEntries = stoolEntries.filter {
+                it.date in startOfMonth..endOfMonth
+            }
+
+            // Crear PDF
+            val writer = PdfWriter(FileOutputStream(filePath))
+            val pdf = PdfDocument(writer)
+            val document = Document(pdf)
+
+            // Título
+            document.add(
+                Paragraph("Calendario de Registros - ${dateFormatter.format(currentMonth.time).capitalize()}")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(20f)
+                    .setMarginBottom(20f)
+            )
+
+            // Crear tabla para el calendario
+            val calendarTable = Table(UnitValue.createPercentArray(7)).useAllAvailableWidth()
+
+            // Encabezados de días
+            val dias = arrayOf("Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb")
+            dias.forEach { dia ->
+                calendarTable.addCell(
+                    Cell()
+                        .add(Paragraph(dia))
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setBold()
+                )
+            }
+
+            // Calcular el primer día del mes y los días vacíos iniciales
+            val firstDayOfMonth = Calendar.getInstance().apply {
+                time = currentMonth.time
+                set(Calendar.DAY_OF_MONTH, 1)
+            }
+            val startingDayOfWeek = firstDayOfMonth.get(Calendar.DAY_OF_WEEK) - 1
+
+            // Añadir celdas vacías
+            repeat(startingDayOfWeek) {
+                calendarTable.addCell(Cell().setHeight(50f))
+            }
+
+            // Añadir días del mes
+            daysData.forEach { dayData ->
+                val cell = Cell().setHeight(50f)
+
+                // Añadir número de día
+                cell.add(
+                    Paragraph(dayData.day.toString())
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(10f)
+                )
+
+                // Indicadores de registros
+                val indicadores = mutableListOf<String>()
+                if (dayData.hasFoodEntry) indicadores.add("🍽 Alimentos")
+                if (dayData.hasSymptomEntry) indicadores.add("❗ Síntomas")
+                if (dayData.hasStoolEntry) indicadores.add("🚽 Deposiciones")
+
+                cell.add(
+                    Paragraph(indicadores.joinToString("\n"))
+                        .setTextAlignment(TextAlignment.LEFT)
+                        .setFontSize(8f)
+                )
+
+                calendarTable.addCell(cell)
+            }
+
+            document.add(calendarTable)
+
+            // Sección de detalles de registros
+            document.add(
+                Paragraph("Detalle de Registros")
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(16f)
+                    .setMarginTop(20f)
+            )
+
+            // Función auxiliar para agregar registros por día
+            fun addDailyRecords(entries: List<Any>, title: String) {
+                val dayEntries = when (entries.firstOrNull()) {
+                    is FoodEntry -> {
+                        (entries as List<FoodEntry>).groupBy { entry ->
+                            val cal = Calendar.getInstance()
+                            cal.time = entry.date
+                            cal.get(Calendar.DAY_OF_MONTH)
+                        }
+                    }
+                    is SymptomEntry -> {
+                        (entries as List<SymptomEntry>).groupBy { entry ->
+                            val cal = Calendar.getInstance()
+                            cal.time = entry.date
+                            cal.get(Calendar.DAY_OF_MONTH)
+                        }
+                    }
+                    is StoolEntry -> {
+                        (entries as List<StoolEntry>).groupBy { entry ->
+                            val cal = Calendar.getInstance()
+                            cal.time = entry.date
+                            cal.get(Calendar.DAY_OF_MONTH)
+                        }
+                    }
+                    else -> emptyMap()
+                }
+
+                dayEntries.forEach { (day, dailyEntries) ->
+                    document.add(
+                        Paragraph("$title - Día $day")
+                            .setFontSize(12f)
+                            .setBold()
+                    )
+
+                    dailyEntries.forEach { entry ->
+                        val detailText = when (entry) {
+                            is FoodEntry -> {
+                                val allergens = entry.allergens.joinToString(", ")
+                                "Hora: ${entry.time} - Alérgenos: $allergens"
+                            }
+                            is SymptomEntry -> {
+                                val symptoms = entry.symptoms.joinToString(", ")
+                                "Hora: ${entry.time} - Síntomas: $symptoms"
+                            }
+                            is StoolEntry -> {
+                                "Hora: ${entry.time} - Tipo: ${entry.stoolType}, Color: ${entry.color}"
+                            }
+                            else -> ""
+                        }
+
+                        document.add(
+                            Paragraph(detailText)
+                                .setFontSize(10f)
+                        )
+                    }
+                }
+            }
+
+            // Agregar registros detallados
+            addDailyRecords(monthFoodEntries, "Registros de Alimentos")
+            addDailyRecords(monthSymptomEntries, "Registros de Síntomas")
+            addDailyRecords(monthStoolEntries, "Registros de Deposiciones")
+
+            document.close()
+
+            // Compartir archivo
+            shareFile(filePath)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Manejar error
+        }
     }
 }

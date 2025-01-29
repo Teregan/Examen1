@@ -8,7 +8,8 @@ data class Symptom(
     val name: String,
     val iconResId: Int = 0,
     var isSelected: Boolean = false,
-    var isCustom: Boolean = false
+    var isCustom: Boolean = false,
+
 )
 
 data class SymptomEntry(
@@ -20,7 +21,8 @@ data class SymptomEntry(
     val symptoms: List<String> = emptyList(), // Lista de IDs de síntomas
     val customSymptoms: List<String> = emptyList(), // Lista de síntomas personalizados
     val notes: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val imagesPaths: List<String> = emptyList()
 ) {
     val date: Date
         get() = timestamp.toDate()

@@ -1,5 +1,6 @@
 package com.example.examen1.viewmodels
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,16 +10,21 @@ import com.example.examen1.R
 import com.example.examen1.models.Symptom
 import com.example.examen1.models.SymptomEntry
 import com.example.examen1.models.SymptomEntryState
+import com.example.examen1.utils.image.ImageManager
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.io.File
 import java.util.Calendar
 import java.util.Date
 
-class SymptomEntryViewModel : BaseEntryViewModel() {
+class SymptomEntryViewModel(private val imageManager: ImageManager) : BaseEntryViewModel() {
 
     private val firestore = FirebaseFirestore.getInstance()
     private var entriesListener: ListenerRegistration? = null
@@ -40,14 +46,58 @@ class SymptomEntryViewModel : BaseEntryViewModel() {
         Symptom("constipation", "Estreñimiento"),
         Symptom("rash", "Erupciones en la piel")
     )
+    private val _selectedImages = MutableStateFlow<List<String>>(emptyList())
+    val selectedImages: StateFlow<List<String>> = _selectedImages.asStateFlow()
+
 
     init {
         setupEntriesListener()
     }
 
+    fun addImage(uri: Uri, entryId: String = "") {
+        viewModelScope.launch {
+            try {
+                // Verificar límite de imágenes
+                if (_selectedImages.value.size >= 3) {
+                    // Opcional: Mostrar mensaje de error
+                    return@launch
+                }
+
+                val imagePath = imageManager.saveImage(uri, "symptoms", entryId)
+                _selectedImages.value = _selectedImages.value + imagePath
+            } catch (e: Exception) {
+                // Manejar error
+            }
+        }
+    }
+
+    fun removeImage(imagePath: String) {
+        viewModelScope.launch {
+            try {
+                imageManager.deleteImage(imagePath)
+                _selectedImages.value = _selectedImages.value - imagePath
+            } catch (e: Exception) {
+                // Manejar error
+            }
+        }
+    }
+
     fun resetState() {
         _symptomEntryState.value = SymptomEntryState.Initial
         _currentEntry.value = null
+    }
+
+    fun clearSelectedImages() {
+        // Eliminar físicamente los archivos de imagen
+        _selectedImages.value.forEach { imagePath ->
+            try {
+                imageManager.deleteImage(imagePath)
+            } catch (e: Exception) {
+                Log.e("SymptomEntryViewModel", "Error deleting image: $imagePath", e)
+            }
+        }
+        // Limpiar la lista de imágenes seleccionadas
+        _selectedImages.value = emptyList()
     }
 
     private fun setupEntriesListener() {
@@ -99,18 +149,33 @@ class SymptomEntryViewModel : BaseEntryViewModel() {
                     "symptoms" to selectedSymptoms,
                     "customSymptoms" to customSymptoms,
                     "notes" to notes,
+                    "imagesPaths" to _selectedImages.value,
                     "createdAt" to System.currentTimeMillis()
                 )
 
-                firestore.collection("symptom_entries")
+                // Primero, añadir la entrada
+                val documentReference = firestore.collection("symptom_entries")
                     .add(entryData)
-                    .addOnSuccessListener {
-                        _symptomEntryState.value = SymptomEntryState.Success.Save
-                        _currentEntry.value = null
+                    .await() // Usar await() para obtener la referencia del documento
+
+                // Si hay imágenes, actualizar el documento con rutas de imágenes actualizadas
+                if (_selectedImages.value.isNotEmpty()) {
+                    // Actualizar las rutas de imágenes con el ID del documento
+                    val updatedImagePaths = _selectedImages.value.map { imagePath ->
+                        imageManager.saveImage(
+                            Uri.fromFile(File(imagePath)),
+                            "symptoms",
+                            documentReference.id
+                        )
                     }
-                    .addOnFailureListener { e ->
-                        _symptomEntryState.value = SymptomEntryState.Error(e.message ?: "Error adding symptom entry")
-                    }
+
+                    // Actualizar el documento con las nuevas rutas de imágenes
+                    documentReference.update("imagesPaths", updatedImagePaths)
+                }
+
+                _symptomEntryState.value = SymptomEntryState.Success.Save
+                _currentEntry.value = null
+                clearSelectedImages()
 
             } catch (e: Exception) {
                 _symptomEntryState.value = SymptomEntryState.Error(e.message ?: "Error adding symptom entry")
@@ -148,7 +213,8 @@ class SymptomEntryViewModel : BaseEntryViewModel() {
                     "symptoms" to selectedSymptoms,
                     "customSymptoms" to customSymptoms,
                     "notes" to notes,
-                    "profileId" to profileId
+                    "profileId" to profileId,
+                    "imagesPaths" to _selectedImages.value
                 )
 
                 firestore.collection("symptom_entries")
@@ -157,6 +223,7 @@ class SymptomEntryViewModel : BaseEntryViewModel() {
                     .addOnSuccessListener {
                         _symptomEntryState.value = SymptomEntryState.Success.Save
                         _currentEntry.value = null
+                        clearSelectedImages()
                     }
                     .addOnFailureListener { e ->
                         _symptomEntryState.value = SymptomEntryState.Error(e.message ?: "Error updating symptom entry")
@@ -164,6 +231,38 @@ class SymptomEntryViewModel : BaseEntryViewModel() {
 
             } catch (e: Exception) {
                 _symptomEntryState.value = SymptomEntryState.Error(e.message ?: "Error updating symptom entry")
+            }
+        }
+    }
+
+    fun loadSymptomEntry(entryId: String) {
+        viewModelScope.launch {
+            try {
+                _symptomEntryState.value = SymptomEntryState.Loading
+                val currentUserId = auth.currentUser?.uid ?: throw Exception("No user logged in")
+
+                val documentSnapshot = firestore.collection("symptom_entries")
+                    .document(entryId)
+                    .get()
+                    .await()
+
+                if (documentSnapshot.exists()) {
+                    val entry = documentSnapshot.toObject(SymptomEntry::class.java)
+                    if (entry?.userId == currentUserId) {
+                        _currentEntry.value = entry.copy(id = documentSnapshot.id)
+
+                        // Importante: Restablecer las imágenes seleccionadas
+                        _selectedImages.value = entry.imagesPaths ?: emptyList()
+
+                        _symptomEntryState.value = SymptomEntryState.Success.Load
+                    } else {
+                        _symptomEntryState.value = SymptomEntryState.Error("No tienes permiso para ver este registro")
+                    }
+                } else {
+                    _symptomEntryState.value = SymptomEntryState.Error("Registro no encontrado")
+                }
+            } catch (e: Exception) {
+                _symptomEntryState.value = SymptomEntryState.Error(e.message ?: "Error loading entry")
             }
         }
     }

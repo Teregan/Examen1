@@ -14,7 +14,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
@@ -103,6 +105,11 @@ fun AppDrawer(
                     onCloseDrawer()
                 }
             }
+        }
+
+        DrawerNavigationItem("Estadisticas", Icons.Default.Analytics) {
+            navController.navigate("statistics")
+            onCloseDrawer()
         }
 
         DrawerNavigationItem("Historial", Icons.Default.List) {

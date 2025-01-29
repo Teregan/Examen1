@@ -3,9 +3,18 @@
     <external-files-path
         name="documents"
         path="Documents/" />
+    <files-path
+        name="images"
+        path="images/" />
     <cache-path
         name="cache"
         path="/" />
+    <external-cache-path
+        name="external_cache"
+        path="." />
+    <external-files-path
+        name="external_files"
+        path="." />
     <files-path
         name="files"
         path="." />
