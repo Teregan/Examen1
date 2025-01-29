@@ -344,7 +344,7 @@ fun StatisticsPage(
                     StatisticChartCard(
                         title = "Alérgenos Consumidos",
                         data = foodEntriesStats.associate {
-                            it.name to it.count.toFloat()
+                            it.name to it.percentage.toFloat()
                         }
                     )
                 }
@@ -354,7 +354,7 @@ fun StatisticsPage(
                     StatisticChartCard(
                         title = "Frecuencia de Síntomas",
                         data = symptomFrequencyStats.associate {
-                            it.symptom to it.frequency.toFloat()
+                            it.symptom to it.percentageOfEntries.toFloat()
                         }
                     )
                 }
@@ -364,7 +364,7 @@ fun StatisticsPage(
                     StatisticChartCard(
                         title = "Tipos de Deposiciones",
                         data = stoolTypeStats.associate {
-                            it.type to it.count.toFloat()
+                            it.type to it.percentage.toFloat()
                         }
                     )
                 }

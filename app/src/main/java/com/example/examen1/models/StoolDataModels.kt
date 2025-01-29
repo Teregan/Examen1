@@ -7,7 +7,15 @@ enum class StoolType {
     LIQUID,
     HARD,
     PELLETS,
-    NORMAL
+    NORMAL;
+
+    val displayName: String
+        get() = when (this) {
+            LIQUID -> "Líquida"
+            HARD -> "Dura"
+            PELLETS -> "Pelotitas"
+            NORMAL -> "Normal"
+        }
 }
 
 enum class StoolColor {
@@ -16,7 +24,17 @@ enum class StoolColor {
     GREEN,
     YELLOW,
     RED,
-    WHITE
+    WHITE;
+
+    val displayName: String
+        get() = when (this) {
+            BROWN -> "Café"
+            BLACK -> "Negro"
+            GREEN -> "Verde"
+            YELLOW -> "Amarillo"
+            RED -> "Rojo"
+            WHITE -> "Blanco"
+        }
 }
 
 data class StoolEntry(

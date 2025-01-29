@@ -341,7 +341,7 @@ fun FoodCorrelationPage(
                                 )
                                 correlation.relatedStoolEntries.forEach { stool ->
                                     Text(
-                                        "- Tipo: ${stool.stoolType}, Color: ${stool.color} (${dateFormatter.format(stool.date)})",
+                                        "- Tipo: ${stool.stoolType.displayName}, Color: ${stool.color.displayName} (${dateFormatter.format(stool.date)})",
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
