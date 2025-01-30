@@ -2,10 +2,12 @@ package com.example.examen1.pages
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -38,6 +40,7 @@ fun ProfilesPage(
     profileViewModel: ProfileViewModel,
     activeProfileViewModel: ActiveProfileViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     var showAddDialog by remember { mutableStateOf(false) }
     var profileToEdit by remember { mutableStateOf<UserProfile?>(null) }
     val profiles = profileViewModel.profiles.observeAsState(initial = emptyList())
@@ -69,36 +72,35 @@ fun ProfilesPage(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(colorScheme.background)
             .padding(16.dp)
     ) {
-        // Header con título y botón de añadir
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Perfiles Familiares",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
-            )
-        }
+        Text(
+            text = "Perfiles Familiares",
+            style = MaterialTheme.typography.headlineMedium,
+            color = colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Botón de Agregar Perfil
-        ActionButton(
-            text = "Agregar Nuevo Perfil",
-            isNavigationArrowVisible = true,
-            onClicked = { showAddDialog = true },
+        Button(
+            onClick = { showAddDialog = true },
+            modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MainGreen,
-                contentColor = Color.White
-            ),
-            shadowColor = MainGreen,
-            enabled = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+                containerColor = colorScheme.primary,
+                contentColor = colorScheme.onPrimary
+            )
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Agregar perfil",
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Agregar Nuevo Perfil")
+        }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -142,6 +144,7 @@ fun ProfileCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
@@ -149,9 +152,9 @@ fun ProfileCard(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -169,12 +172,12 @@ fun ProfileCard(
                         imageVector = if (profile.profileType == ProfileType.MOTHER)
                             Icons.Default.Person else Icons.Default.Face,
                         contentDescription = null,
-                        tint = MainGreen
+                        tint = colorScheme.primary
                     )
                     Text(
                         text = profile.name,
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = colorScheme.onSurface
                     )
                 }
 
@@ -183,30 +186,30 @@ fun ProfileCard(
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Editar",
-                            tint = MainGreen
+                            tint = colorScheme.primary
                         )
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Eliminar",
-                            tint = Color.Red
+                            tint = colorScheme.error
                         )
                     }
                 }
             }
 
-            // Información adicional del perfil
             Text(
                 text = "Tipo: ${if (profile.profileType == ProfileType.MOTHER) "Madre" else "Infante"}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
             )
             if (profile.profileType == ProfileType.INFANT) {
                 Text(
                     text = "Lactante: ${if (profile.isNursing == true) "Sí" else "No"}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -224,14 +227,23 @@ fun ProfileCard(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Eliminar", color = Color.Red)
+                    Text(
+                        "Eliminar",
+                        color = colorScheme.error
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar")
+                    Text(
+                        "Cancelar",
+                        color = colorScheme.primary
+                    )
                 }
-            }
+            },
+            containerColor = colorScheme.surface,
+            titleContentColor = colorScheme.onSurface,
+            textContentColor = colorScheme.onSurfaceVariant
         )
     }
 }
@@ -242,6 +254,7 @@ fun ProfileDialog(
     onDismiss: () -> Unit,
     onSave: (UserProfile) -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     var name by remember { mutableStateOf(profile?.name ?: "") }
     var profileType by remember { mutableStateOf(profile?.profileType ?: ProfileType.INFANT) }
     var isNursing by remember { mutableStateOf(profile?.isNursing ?: false) }
@@ -252,7 +265,7 @@ fun ProfileDialog(
         title = {
             Text(
                 text = if (profile != null) "Editar Perfil" else "Nuevo Perfil",
-                color = MainGreen
+                color = colorScheme.onSurface
             )
         },
         text = {
@@ -269,17 +282,17 @@ fun ProfileDialog(
                     isError = isError,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MainGreen,
-                        focusedLabelColor = MainGreen,
-                        unfocusedBorderColor = Color.Gray,
-                        unfocusedLabelColor = Color.Gray
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedLabelColor = colorScheme.primary,
+                        unfocusedLabelColor = colorScheme.onSurfaceVariant
                     )
                 )
 
                 if (isError) {
                     Text(
                         text = "El nombre es requerido",
-                        color = MaterialTheme.colorScheme.error,
+                        color = colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -287,8 +300,10 @@ fun ProfileDialog(
                 // Tipo de Perfil
                 Text(
                     text = "Tipo de Perfil",
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colorScheme.onSurface
                 )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -298,8 +313,8 @@ fun ProfileDialog(
                         onClick = { profileType = ProfileType.INFANT },
                         label = { Text("Infante") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MainGreen,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = colorScheme.primary,
+                            selectedLabelColor = colorScheme.onPrimary
                         )
                     )
                     FilterChip(
@@ -307,8 +322,8 @@ fun ProfileDialog(
                         onClick = { profileType = ProfileType.MOTHER },
                         label = { Text("Madre") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MainGreen,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = colorScheme.primary,
+                            selectedLabelColor = colorScheme.onPrimary
                         )
                     )
                 }
@@ -322,12 +337,14 @@ fun ProfileDialog(
                             checked = isNursing,
                             onCheckedChange = { isNursing = it },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = MainGreen
+                                checkedColor = colorScheme.primary,
+                                uncheckedColor = colorScheme.outline
                             )
                         )
                         Text(
                             text = "¿Es lactante?",
-                            modifier = Modifier.padding(start = 8.dp)
+                            modifier = Modifier.padding(start = 8.dp),
+                            color = colorScheme.onSurface
                         )
                     }
                 }
@@ -353,14 +370,19 @@ fun ProfileDialog(
             ) {
                 Text(
                     text = if (profile != null) "Actualizar" else "Guardar",
-                    color = MainGreen
+                    color = colorScheme.primary
                 )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(
+                    "Cancelar",
+                    color = colorScheme.onSurfaceVariant
+                )
             }
-        }
+        },
+        containerColor = colorScheme.surface,
+        textContentColor = colorScheme.onSurface
     )
 }

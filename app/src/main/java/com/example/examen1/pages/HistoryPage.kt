@@ -1,6 +1,7 @@
 package com.example.examen1.pages
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,7 +23,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.examen1.ui.theme.MainGreen
 
 enum class RecordType {
     ALL, FOOD, SYMPTOM, STOOL, CONTROL
@@ -37,6 +37,7 @@ fun HistoryPage(
     activeProfileViewModel: ActiveProfileViewModel,
     tagViewModel: TagViewModel // Agregar TagViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val historyState = historyViewModel.historyState.observeAsState()
     var startDate by remember { mutableStateOf(Date()) }
     var endDate by remember { mutableStateOf(Date()) }
@@ -52,16 +53,20 @@ fun HistoryPage(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .background(colorScheme.background)
                 .padding(16.dp)
         ) {
             Text(
                 text = "Historial",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
+                color = colorScheme.primary
             )
             // Filtros
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = colorScheme.surface
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -70,6 +75,9 @@ fun HistoryPage(
                     // Selector de fechas
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = colorScheme.surface
+                        ),
                         onClick = {
                             val calendar = Calendar.getInstance()
                             DatePickerDialog(
@@ -86,12 +94,16 @@ fun HistoryPage(
                     ) {
                         Text(
                             text = "Fecha inicial: ${dateFormatter.format(startDate)}",
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
+                            color = colorScheme.onSurface
                         )
                     }
 
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = colorScheme.surface
+                        ),
                         onClick = {
                             val calendar = Calendar.getInstance()
                             DatePickerDialog(
@@ -108,7 +120,8 @@ fun HistoryPage(
                     ) {
                         Text(
                             text = "Fecha final: ${dateFormatter.format(endDate)}",
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
+                            color = colorScheme.onSurface
                         )
                     }
 
@@ -128,7 +141,13 @@ fun HistoryPage(
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTypeMenu) },
-                            modifier = Modifier.menuAnchor()
+                            modifier = Modifier.menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = colorScheme.primary,
+                                unfocusedBorderColor = colorScheme.outline,
+                                focusedTextColor = colorScheme.onSurface,
+                                unfocusedTextColor = colorScheme.onSurface
+                            )
                         )
                         ExposedDropdownMenu(
                             expanded = expandedTypeMenu,
@@ -176,7 +195,8 @@ fun HistoryPage(
                     if (recordType == RecordType.FOOD || recordType == RecordType.ALL) {
                         Text(
                             text = "Filtrar por etiquetas:",
-                            style = MaterialTheme.typography.titleSmall
+                            style = MaterialTheme.typography.titleSmall,
+                            color = colorScheme.onSurface
                         )
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -193,7 +213,8 @@ fun HistoryPage(
                                     },
                                     label = { Text(tag.name) },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex))
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex)),
+                                        selectedLabelColor = colorScheme.onPrimary
                                     )
                                 )
                             }
@@ -211,8 +232,8 @@ fun HistoryPage(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MainGreen,
-                            contentColor = Color.White
+                            containerColor = colorScheme.primary,
+                            contentColor = colorScheme.onPrimary
                         )
                     ) {
                         Text("Buscar")
@@ -226,7 +247,8 @@ fun HistoryPage(
             when (val state = historyState.value) {
                 is HistoryState.Loading -> {
                     CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = colorScheme.primary
                     )
                 }
                 is HistoryState.Success -> {
@@ -309,7 +331,7 @@ fun HistoryPage(
                 is HistoryState.Error -> {
                     Text(
                         text = state.message,
-                        color = MaterialTheme.colorScheme.error,
+                        color = colorScheme.error,
                         modifier = Modifier.padding(16.dp)
                     )
                 }
@@ -332,9 +354,13 @@ private fun HistoryEntryCard(
     tags: List<Tag> = emptyList(),
     onEdit: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onEdit
+        onClick = onEdit,
+        colors = CardDefaults.cardColors(
+            containerColor = colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -345,21 +371,40 @@ private fun HistoryEntryCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(title)
+                        Text(
+                            title,
+                            color = colorScheme.onSurface
+                        )
                         // Indicador de imágenes
                         if (hasImages) {
                             Icon(
                                 imageVector = Icons.Default.Image,
                                 contentDescription = "Contiene imágenes",
                                 modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = colorScheme.primary
                             )
                         }
                     }
                 },
-                supportingContent = { Text(time) },
-                leadingContent = { Icon(icon, contentDescription = null) },
-                trailingContent = { Text(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)) }
+                supportingContent = {
+                    Text(
+                        time,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                },
+                leadingContent = {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = colorScheme.primary
+                    )
+                },
+                trailingContent = {
+                    Text(
+                        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date),
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
             )
             if (tags.isNotEmpty()) {
                 LazyRow(

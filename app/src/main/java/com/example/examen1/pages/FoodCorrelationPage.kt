@@ -38,8 +38,7 @@ import android.graphics.Paint
 import android.graphics.Path as AndroidPath
 import android.graphics.PointF
 import android.graphics.RectF
-import android.util.Log
-import com.example.examen1.ui.theme.MainGreen
+import androidx.compose.foundation.BorderStroke
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -54,6 +53,7 @@ fun FoodCorrelationPage(
     activeProfileViewModel: ActiveProfileViewModel,
     profileViewModel: ProfileViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val profiles = profileViewModel.profiles.observeAsState(initial = emptyList())
@@ -76,6 +76,7 @@ fun FoodCorrelationPage(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(colorScheme.background)
             .padding(16.dp)
     ) {
         LazyColumn(
@@ -86,13 +87,14 @@ fun FoodCorrelationPage(
                 Text(
                     text = "Correlaciones de Alimentos",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MainGreen,
+                    color = colorScheme.primary,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 Text(
                     text = "Seleccionar Perfil",
                     style = MaterialTheme.typography.titleMedium,
+                    color = colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
@@ -109,7 +111,11 @@ fun FoodCorrelationPage(
                             viewModel.analyzeCorrelations(startDate, endDate, null)
                         },
                         label = { Text("Todos") },
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = colorScheme.primary,
+                            selectedLabelColor = colorScheme.onPrimary
+                        )
                     )
 
                     profiles.value.forEach { profile ->
@@ -127,7 +133,11 @@ fun FoodCorrelationPage(
                                     Icon(Icons.Default.Face, "Niño")
                                 }
                             },
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = colorScheme.primary,
+                                selectedLabelColor = colorScheme.onPrimary
+                            )
                         )
                     }
                 }
@@ -135,6 +145,10 @@ fun FoodCorrelationPage(
                 // Selector de fecha inicial
                 OutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, colorScheme.outline),
                     onClick = {
                         val calendar = Calendar.getInstance()
                         calendar.time = startDate
@@ -153,7 +167,8 @@ fun FoodCorrelationPage(
                 ) {
                     Text(
                         text = "Fecha inicial: ${dateFormatter.format(startDate)}",
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
+                        color = colorScheme.onSurface
                     )
                 }
 
@@ -162,6 +177,10 @@ fun FoodCorrelationPage(
                 // Selector de fecha final
                 OutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, colorScheme.outline),
                     onClick = {
                         val calendar = Calendar.getInstance()
                         calendar.time = endDate
@@ -180,7 +199,8 @@ fun FoodCorrelationPage(
                 ) {
                     Text(
                         text = "Fecha final: ${dateFormatter.format(endDate)}",
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
+                        color = colorScheme.onSurface
                     )
                 }
             }
@@ -193,7 +213,8 @@ fun FoodCorrelationPage(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
-                                .align(Alignment.Center)
+                                .align(Alignment.Center),
+                            color = colorScheme.primary
                         )
                     }
                     is FoodCorrelationState.Success -> {
@@ -203,7 +224,8 @@ fun FoodCorrelationPage(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                color = colorScheme.onSurface
                             )
                         } else {
                             // Calcular conteos para gráficos
@@ -243,7 +265,8 @@ fun FoodCorrelationPage(
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
+                                    containerColor = colorScheme.primary,
+                                    contentColor = colorScheme.onPrimary
                                 )
                             ) {
                                 Row(
@@ -279,7 +302,7 @@ fun FoodCorrelationPage(
                     is FoodCorrelationState.Error -> {
                         Text(
                             text = state.message,
-                            color = MaterialTheme.colorScheme.error,
+                            color = colorScheme.error,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
@@ -306,11 +329,13 @@ fun FoodCorrelationPage(
                                         foodEntryViewModel.allergens.find { it.id == allergenId }?.name ?: allergenId
                                     }.joinToString(", ")
                                 }",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                color = colorScheme.onSurface
                             )
                             Text(
                                 "Fecha: ${dateFormatter.format(correlation.foodEntry.date)}",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colorScheme.onSurface
                             )
 
                             // Síntomas relacionados
@@ -318,7 +343,8 @@ fun FoodCorrelationPage(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     "Síntomas Relacionados:",
-                                    style = MaterialTheme.typography.titleSmall
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = colorScheme.onSurface
                                 )
                                 correlation.relatedSymptoms.forEach { symptom ->
                                     Text(
@@ -327,7 +353,8 @@ fun FoodCorrelationPage(
                                                 symptomTranslations[symptomId] ?: symptomId
                                             }.joinToString(", ")
                                         } (${dateFormatter.format(symptom.date)})",
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colorScheme.onSurface
                                     )
                                 }
                             }
@@ -337,12 +364,14 @@ fun FoodCorrelationPage(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     "Deposiciones Relacionadas:",
-                                    style = MaterialTheme.typography.titleSmall
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = colorScheme.onSurface
                                 )
                                 correlation.relatedStoolEntries.forEach { stool ->
                                     Text(
                                         "- Tipo: ${stool.stoolType.displayName}, Color: ${stool.color.displayName} (${dateFormatter.format(stool.date)})",
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colorScheme.onSurface
                                     )
                                 }
                             }

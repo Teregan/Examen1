@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,14 +25,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
 import com.example.examen1.components.ImagePicker
 import com.example.examen1.models.SymptomEntryState
 import com.example.examen1.ui.theme.MainGreen
-import com.example.examen1.ui.theme.PrimaryPinkDark
 import com.example.examen1.viewmodels.SymptomEntryViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -49,6 +47,7 @@ fun SymptomEntryPage(
     entryId: String? = null,
     profileId: String
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -118,6 +117,7 @@ fun SymptomEntryPage(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .background(colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -125,12 +125,14 @@ fun SymptomEntryPage(
             Text(
                 text = if (entryId != null) "Editar Síntomas" else "Registrar Síntomas",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
+                color = colorScheme.primary
             )
 
             Text(
                 text = "Síntomas observados",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
+
             )
 
             // Lista de síntomas predefinidos
@@ -148,10 +150,19 @@ fun SymptomEntryPage(
                         leadingContent  = {
                             Checkbox(
                                 checked = symptom.isSelected,
-                                onCheckedChange = null
+                                onCheckedChange = null,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = colorScheme.primary,
+                                    uncheckedColor = colorScheme.outline
+                                )
                             )
                         },
-                        headlineContent = { Text(symptom.name) }
+                        headlineContent = {
+                            Text(
+                                text = symptom.name,
+                                color = colorScheme.onSurface
+                            )
+                        }
 
                     )
                 }
@@ -163,14 +174,23 @@ fun SymptomEntryPage(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     ListItem(
-                        headlineContent = { Text(symptom) },
+                        headlineContent = {
+                            Text(
+                                text = symptom,
+                                color = colorScheme.onSurface
+                            )
+                        },
                         trailingContent = {
                             IconButton(
                                 onClick = {
                                     customSymptoms = customSymptoms.filter { it != symptom }
                                 }
                             ) {
-                                Icon(Icons.Default.Close, "Eliminar síntoma")
+                                Icon(
+                                    Icons.Default.Close,
+                                    "Eliminar síntoma",
+                                    tint = colorScheme.error
+                                )
                             }
                         }
                     )
@@ -180,7 +200,11 @@ fun SymptomEntryPage(
             // Botón para agregar síntoma personalizado
             OutlinedButton(
                 onClick = { showAddCustomSymptom = true },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colorScheme.primary
+                ),
+                border = BorderStroke(1.dp, colorScheme.primary)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -189,12 +213,17 @@ fun SymptomEntryPage(
 
             Text(
                 text = "Fecha y Hora",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
             )
 
             // Selector de fecha
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, colorScheme.outline),
                 onClick = {
                     val calendar = Calendar.getInstance()
                     calendar.time = selectedDate
@@ -212,13 +241,18 @@ fun SymptomEntryPage(
             ) {
                 Text(
                     text = "Fecha: ${dateFormatter.format(selectedDate)}",
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
+                    color = colorScheme.onSurface
                 )
             }
 
             // Selector de hora
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, colorScheme.outline),
                 onClick = {
                     val currentTime = selectedTime.split(":")
                     TimePickerDialog(
@@ -234,7 +268,8 @@ fun SymptomEntryPage(
             ) {
                 Text(
                     text = "Hora: $selectedTime",
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
+                    color = colorScheme.onSurface
                 )
             }
 
@@ -245,12 +280,21 @@ fun SymptomEntryPage(
                 label = { Text("Notas adicionales") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
-                maxLines = 5
+                maxLines = 5,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.primary,
+                    unfocusedBorderColor = colorScheme.outline,
+                    focusedLabelColor = colorScheme.primary,
+                    unfocusedLabelColor = colorScheme.onSurfaceVariant
+                )
             )
 
             // Sección de imágenes
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = colorScheme.surface
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -259,7 +303,7 @@ fun SymptomEntryPage(
                     Text(
                         text = "Imágenes",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        color = colorScheme.onSurface
                     )
 
                     ImagePicker(
@@ -351,8 +395,8 @@ fun SymptomEntryPage(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MainGreen,
-                    contentColor = Color.White
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
                 ),
                 shadowColor = MainGreen,
                 enabled = symptomEntryState.value != SymptomEntryState.Loading,
@@ -365,13 +409,20 @@ fun SymptomEntryPage(
     if (showAddCustomSymptom) {
         AlertDialog(
             onDismissRequest = { showAddCustomSymptom = false },
+            containerColor = colorScheme.surface,
             title = { Text("Agregar síntoma") },
             text = {
                 OutlinedTextField(
                     value = newCustomSymptom,
                     onValueChange = { newCustomSymptom = it },
                     label = { Text("Descripción del síntoma") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedLabelColor = colorScheme.primary,
+                        unfocusedLabelColor = colorScheme.onSurfaceVariant
+                    )
                 )
             },
             confirmButton = {
@@ -382,13 +433,21 @@ fun SymptomEntryPage(
                             newCustomSymptom = ""
                         }
                         showAddCustomSymptom = false
-                    }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = colorScheme.primary
+                    )
                 ) {
                     Text("Agregar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAddCustomSymptom = false }) {
+                TextButton(
+                    onClick = { showAddCustomSymptom = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = colorScheme.onSurfaceVariant
+                    )
+                ) {
                     Text("Cancelar")
                 }
             }

@@ -1,6 +1,7 @@
 package com.example.examen1.components
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -21,9 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.examen1.ui.theme.DarkTextColor
-import com.example.examen1.ui.theme.LightGreen
-import com.example.examen1.ui.theme.TextFieldBg
+
 
 @Composable
 fun InputField(
@@ -34,6 +33,7 @@ fun InputField(
     @DrawableRes leadingIconRes: Int,
     placeholderText: String
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     TextField(
         modifier = modifier
             .fillMaxWidth()
@@ -46,12 +46,12 @@ fun InputField(
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
-            focusedContainerColor = TextFieldBg,
-            unfocusedContainerColor = TextFieldBg,
-            focusedTextColor = DarkTextColor,
-            unfocusedTextColor = DarkTextColor,
-            focusedLeadingIconColor = LightGreen,
-            unfocusedLeadingIconColor = DarkTextColor.copy(alpha = 0.6f)
+            focusedContainerColor = colorScheme.surfaceVariant,
+            unfocusedContainerColor = colorScheme.surfaceVariant,
+            focusedTextColor = colorScheme.onSurface,
+            unfocusedTextColor = colorScheme.onSurface,
+            focusedLeadingIconColor = colorScheme.primary,
+            unfocusedLeadingIconColor = colorScheme.onSurface.copy(alpha = 0.6f)
         ),
         textStyle = MaterialTheme.typography.bodyLarge,
         leadingIcon = {
@@ -64,7 +64,7 @@ fun InputField(
         placeholder = {
             Text(
                 text = placeholderText,
-                color = DarkTextColor.copy(alpha = 0.6f)
+                color = colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
     )

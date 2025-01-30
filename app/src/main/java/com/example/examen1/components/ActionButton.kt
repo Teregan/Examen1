@@ -1,5 +1,6 @@
 package com.example.examen1.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,14 +39,13 @@ fun ActionButton(
             .fillMaxWidth()
             .height(62.dp)
             .shadow(
-                elevation = 24.dp,
+                elevation = if (isSystemInDarkTheme()) 8.dp else 24.dp,
                 shape = RoundedCornerShape(percent = 50),
-                spotColor = shadowColor
+                spotColor = if (isSystemInDarkTheme()) Color.Black else shadowColor
             ),
         onClick = onClicked,
         colors = colors,
         enabled = enabled
-
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),

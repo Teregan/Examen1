@@ -1,6 +1,7 @@
 package com.example.examen1.pages
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ fun TagManagementPage(
     navController: NavController,
     viewModel: TagViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val tags = viewModel.tags.observeAsState(initial = emptyList())
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
@@ -43,6 +45,7 @@ fun TagManagementPage(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(colorScheme.background)
             .padding(16.dp)
     ) {
         // Título y botón de agregar
@@ -54,7 +57,7 @@ fun TagManagementPage(
             Text(
                 text = "Gestionar Etiquetas",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
+                color = colorScheme.primary
             )
             IconButton(
                 onClick = {
@@ -65,7 +68,7 @@ fun TagManagementPage(
                 Icon(
                     Icons.Default.Add,
                     contentDescription = "Agregar etiqueta",
-                    tint = MainGreen
+                    tint = colorScheme.primary
                 )
             }
         }
@@ -80,14 +83,12 @@ fun TagManagementPage(
                 TagItem(
                     tag = tag,
                     onDelete = {
-                        Log.d("TagManagementPage", "Deleting tag: ${tag.id}")
                         viewModel.deleteTag(tag.id)
                     }
                 )
             }
         }
     }
-
 
     if (showAddDialog) {
         AddTagDialog(
@@ -105,11 +106,14 @@ fun TagItem(
     tag: Tag,
     onDelete: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(android.graphics.Color.parseColor(tag.colorHex)).copy(alpha = 0.2f)
-        )
+            containerColor = Color(android.graphics.Color.parseColor(tag.colorHex)).copy(alpha = 0.1f)
+        ),
+        border = BorderStroke(1.dp, Color(android.graphics.Color.parseColor(tag.colorHex)))
     ) {
         Row(
             modifier = Modifier
@@ -120,10 +124,17 @@ fun TagItem(
         ) {
             Text(
                 text = tag.name,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                color = colorScheme.onSurface
             )
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar etiqueta")
+            IconButton(
+                onClick = onDelete
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Eliminar etiqueta",
+                    tint = colorScheme.error
+                )
             }
         }
     }
@@ -134,17 +145,19 @@ fun AddTagDialog(
     onDismiss: () -> Unit,
     onAdd: (name: String, color: String) -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     var tagName by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf("#4CAF50") }
 
-    Log.d("AddTagDialog", "Diálogo de agregar tag creado")
-
     AlertDialog(
-        onDismissRequest = {
-            Log.d("AddTagDialog", "Diálogo descartado")
-            onDismiss()
+        onDismissRequest = onDismiss,
+        containerColor = colorScheme.surface,
+        title = {
+            Text(
+                "Nueva Etiqueta",
+                color = colorScheme.onSurface
+            )
         },
-        title = { Text("Nueva Etiqueta") },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -157,7 +170,19 @@ fun AddTagDialog(
                     },
                     label = { Text("Nombre de la etiqueta") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedLabelColor = colorScheme.primary,
+                        unfocusedLabelColor = colorScheme.onSurfaceVariant
+                    )
+                )
+
+                Text(
+                    "Seleccionar color",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colorScheme.onSurface
                 )
 
                 Row(
@@ -178,7 +203,6 @@ fun AddTagDialog(
                                 )
                                 .clickable {
                                     selectedColor = color
-                                    Log.d("AddTagDialog", "Color seleccionado: $color")
                                 }
                         )
                     }
@@ -188,28 +212,23 @@ fun AddTagDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    Log.d("AddTagDialog", "Botón de confirmar presionado")
-                    Log.d("AddTagDialog", "Nombre de tag: $tagName, Color: $selectedColor")
-
                     if (tagName.isNotBlank()) {
-                        Log.d("AddTagDialog", "Llamando a onAdd")
                         onAdd(tagName, selectedColor)
-                    } else {
-                        Log.d("AddTagDialog", "Nombre de tag está vacío")
                     }
                 }
             ) {
-                Text("Agregar")
+                Text(
+                    "Agregar",
+                    color = colorScheme.primary
+                )
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = {
-                    Log.d("AddTagDialog", "Botón de cancelar presionado")
-                    onDismiss()
-                }
-            ) {
-                Text("Cancelar")
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Cancelar",
+                    color = colorScheme.onSurfaceVariant
+                )
             }
         }
     )

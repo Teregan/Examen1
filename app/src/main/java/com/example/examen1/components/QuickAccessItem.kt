@@ -1,6 +1,7 @@
 package com.example.examen1.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,10 +23,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.examen1.ui.theme.CardBackground
-import com.example.examen1.ui.theme.LightBlue
-import com.example.examen1.ui.theme.MainGreen
-import com.example.examen1.ui.theme.MediumGreen
 
 @Composable
 fun QuickAccessItem(
@@ -34,6 +31,7 @@ fun QuickAccessItem(
     subtitle: String? = null,
     onClick: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -41,9 +39,14 @@ fun QuickAccessItem(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.9f)
+            containerColor = if (isSystemInDarkTheme())
+                colorScheme.surfaceVariant
+            else
+                colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSystemInDarkTheme()) 2.dp else 4.dp
+        )
     ) {
         Column(
             modifier = Modifier
@@ -58,11 +61,12 @@ fun QuickAccessItem(
                 modifier = Modifier
                     .size(32.dp)
                     .padding(bottom = 4.dp),
-                tint = MediumGreen
+                tint = colorScheme.primary
             )
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium,
+                color = colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -71,7 +75,7 @@ fun QuickAccessItem(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MediumGreen,
+                    color = colorScheme.primary,
                     textAlign = TextAlign.Center,
                     maxLines = 1
                 )

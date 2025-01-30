@@ -3,6 +3,7 @@ package com.example.examen1.pages
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -47,6 +49,7 @@ fun StoolEntryPage(
     entryId: String? = null,
     profileId: String
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -108,18 +111,20 @@ fun StoolEntryPage(
             modifier = modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .background(colorScheme.background)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = if (entryId != null) "Editar Deposición" else "Registrar Deposición",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
+                color = colorScheme.primary
             )
             // Tipo de deposición
             Text(
                 text = "Selección Tipo Deposición",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
             )
 
             ExposedDropdownMenuBox(
@@ -136,10 +141,15 @@ fun StoolEntryPage(
                     onValueChange = { },
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
+                        .menuAnchor(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedTextColor = colorScheme.onSurface,
+                        unfocusedTextColor = colorScheme.onSurface
+                    )
                 )
 
                 ExposedDropdownMenu(
@@ -155,7 +165,8 @@ fun StoolEntryPage(
                                         StoolType.HARD -> "Dura"
                                         StoolType.PELLETS -> "Pelotitas"
                                         StoolType.NORMAL -> "Normal"
-                                    }
+                                    },
+                                    color = colorScheme.onSurface
                                 )
                             },
                             onClick = {
@@ -170,7 +181,8 @@ fun StoolEntryPage(
             // Color
             Text(
                 text = "Color",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
             )
 
             ExposedDropdownMenuBox(
@@ -189,10 +201,15 @@ fun StoolEntryPage(
                     onValueChange = { },
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedColor) },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
+                        .menuAnchor(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedTextColor = colorScheme.onSurface,
+                        unfocusedTextColor = colorScheme.onSurface
+                    )
                 )
 
                 ExposedDropdownMenu(
@@ -210,7 +227,8 @@ fun StoolEntryPage(
                                         StoolColor.YELLOW -> "Amarillo"
                                         StoolColor.RED -> "Rojo"
                                         StoolColor.WHITE -> "Blanco"
-                                    }
+                                    },
+                                    color = colorScheme.onSurface
                                 )
                             },
                             onClick = {
@@ -225,12 +243,17 @@ fun StoolEntryPage(
             // Fecha y Hora
             Text(
                 text = "Fecha y Hora",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
             )
 
             // Selector de fecha
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, colorScheme.outline),
                 onClick = {
                     val calendar = Calendar.getInstance()
                     calendar.time = selectedDate
@@ -248,13 +271,18 @@ fun StoolEntryPage(
             ) {
                 Text(
                     text = "Fecha: ${dateFormatter.format(selectedDate)}",
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
+                    color = colorScheme.onSurface
                 )
             }
 
             // Selector de hora
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, colorScheme.outline),
                 onClick = {
                     val currentTime = selectedTime.split(":")
                     TimePickerDialog(
@@ -270,7 +298,8 @@ fun StoolEntryPage(
             ) {
                 Text(
                     text = "Hora: $selectedTime",
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
+                    color = colorScheme.onSurface
                 )
             }
 
@@ -281,14 +310,21 @@ fun StoolEntryPage(
                 label = { Text("Notas adicionales") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
-                maxLines = 5
+                maxLines = 5,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.primary,
+                    unfocusedBorderColor = colorScheme.outline,
+                    focusedLabelColor = colorScheme.primary,
+                    unfocusedLabelColor = colorScheme.onSurfaceVariant
+                )
             )
 
             // Sección de imágenes
-
-
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = colorScheme.surface
+                )
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -296,13 +332,15 @@ fun StoolEntryPage(
                 ) {
                     Text(
                         text = "Imágenes",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colorScheme.onSurface
                     )
 
                     ImagePicker(
                         onImageSelected = { uri ->
                             viewModel.addImage(uri, entryId ?: "")
-                        }
+                        },
+                        currentImagesCount = selectedImages.value.size
                     )
 
                     // Mostrar imágenes seleccionadas
@@ -331,14 +369,14 @@ fun StoolEntryPage(
                                             .align(Alignment.TopEnd)
                                             .size(24.dp)
                                             .background(
-                                                color = Color.Black.copy(alpha = 0.5f),
+                                                color = colorScheme.surface.copy(alpha = 0.5f),
                                                 shape = CircleShape
                                             )
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
                                             contentDescription = "Eliminar imagen",
-                                            tint = Color.White,
+                                            tint = colorScheme.error,
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
@@ -357,10 +395,8 @@ fun StoolEntryPage(
             }
 
             // Botón guardar
-            ActionButton(
-                text = if (entryId != null) "Actualizar" else "Guardar",
-                isNavigationArrowVisible = false,
-                onClicked = {
+            Button(
+                onClick = {
                     if (entryId != null) {
                         viewModel.updateStoolEntry(
                             entryId = entryId,
@@ -382,14 +418,19 @@ fun StoolEntryPage(
                         )
                     }
                 },
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MainGreen,
-                    contentColor = Color.White
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
                 ),
-                shadowColor = MainGreen,
-                enabled = stoolEntryState.value != StoolEntryState.Loading,
-                modifier = Modifier.fillMaxWidth()
-            )
+                enabled = stoolEntryState.value != StoolEntryState.Loading
+            ) {
+                Text(
+                    text = if (entryId != null) "Actualizar" else "Guardar",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
         }
-
 }

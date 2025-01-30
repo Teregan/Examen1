@@ -2,6 +2,8 @@ package com.example.examen1.pages
 
 import android.app.DatePickerDialog
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -16,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
@@ -36,6 +39,7 @@ fun ControlTypePage(
     foodEntryViewModel: FoodEntryViewModel,
     profileId: String
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
@@ -67,6 +71,7 @@ fun ControlTypePage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(colorScheme.background)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -74,11 +79,15 @@ fun ControlTypePage(
             Text(
                 text = "Nuevo Control de Alérgeno",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
+                color = colorScheme.primary
             )
 
             // Control Type Selection
-            Text("Tipo de Control", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Tipo de Control",
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -87,8 +96,8 @@ fun ControlTypePage(
                     onClick = { selectedControlType = ControlType.ELIMINATION },
                     label = { Text("Eliminación") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MainGreen,
-                        selectedLabelColor = Color.White
+                        selectedContainerColor = colorScheme.primary,
+                        selectedLabelColor = colorScheme.onPrimary
                     )
                 )
                 FilterChip(
@@ -96,14 +105,18 @@ fun ControlTypePage(
                     onClick = { selectedControlType = ControlType.CONTROLLED },
                     label = { Text("Controlada") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MainGreen,
-                        selectedLabelColor = Color.White
+                        selectedContainerColor = colorScheme.primary,
+                        selectedLabelColor = colorScheme.onPrimary
                     )
                 )
             }
 
             // Allergen Selection Grid
-            Text("Alérgeno a Evaluar", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Alérgeno a Evaluar",
+                style = MaterialTheme.typography.titleMedium,
+                color = colorScheme.onSurface
+            )
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -146,11 +159,16 @@ fun ControlTypePage(
                                 calendar.get(Calendar.MONTH),
                                 calendar.get(Calendar.DAY_OF_MONTH)
                             ).show()
-                        }
+                        },
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, colorScheme.outline)
                 ) {
                     Text(
-                        "Desde: ${dateFormatter.format(startDate)}",
-                        modifier = Modifier.padding(16.dp)
+                        text = "Desde: ${dateFormatter.format(startDate)}",
+                        modifier = Modifier.padding(16.dp),
+                        color = colorScheme.onSurface
                     )
                 }
 
@@ -159,7 +177,6 @@ fun ControlTypePage(
                         .weight(1f)
                         .clickable {
                             val calendar = Calendar.getInstance()
-                            calendar.time = endDate
                             DatePickerDialog(
                                 context,
                                 { _, year, month, day ->
@@ -170,11 +187,16 @@ fun ControlTypePage(
                                 calendar.get(Calendar.MONTH),
                                 calendar.get(Calendar.DAY_OF_MONTH)
                             ).show()
-                        }
+                        },
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, colorScheme.outline)
                 ) {
                     Text(
-                        "Hasta: ${dateFormatter.format(endDate)}",
-                        modifier = Modifier.padding(16.dp)
+                        text = "Hasta: ${dateFormatter.format(endDate)}",
+                        modifier = Modifier.padding(16.dp),
+                        color = colorScheme.onSurface
                     )
                 }
             }
@@ -186,25 +208,31 @@ fun ControlTypePage(
                 label = { Text("Notas adicionales") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
-                maxLines = 5
+                maxLines = 5,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.primary,
+                    unfocusedBorderColor = colorScheme.outline,
+                    focusedLabelColor = colorScheme.primary,
+                    unfocusedLabelColor = colorScheme.onSurfaceVariant,
+                    cursorColor = colorScheme.primary
+                )
             )
 
             // Save Button
-            ActionButton(
-                text = "Guardar Control",
-                onClicked = {
+            Button(
+                onClick = {
                     if (selectedControlType == null) {
                         Toast.makeText(context, "Seleccione un tipo de control", Toast.LENGTH_SHORT).show()
-                        return@ActionButton
+                        return@Button
                     }
                     val selectedAllergenId = allergens.find { it.isSelected }?.id
                     if (selectedAllergenId == null) {
                         Toast.makeText(context, "Seleccione un alérgeno", Toast.LENGTH_SHORT).show()
-                        return@ActionButton
+                        return@Button
                     }
                     if (endDate.before(startDate)) {
                         Toast.makeText(context, "La fecha final debe ser posterior a la inicial", Toast.LENGTH_SHORT).show()
-                        return@ActionButton
+                        return@Button
                     }
 
                     controlTypeViewModel.addControl(
@@ -216,19 +244,25 @@ fun ControlTypePage(
                         notes = notes
                     )
                 },
-                isNavigationArrowVisible = false,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MainGreen,
-                    contentColor = Color.White
-                ),
-                enabled = controlTypeState.value !is ControlTypeState.Loading,
                 modifier = Modifier.fillMaxWidth(),
-                shadowColor = MainGreen,
-            )
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
+                ),
+                enabled = controlTypeState.value != ControlTypeState.Loading
+            ) {
+                Text(
+                    text = "Guardar Control",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
 
             if (controlTypeState.value is ControlTypeState.Loading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    color = colorScheme.primary
                 )
             }
         }

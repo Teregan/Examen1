@@ -5,19 +5,15 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -26,7 +22,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -35,17 +30,10 @@ import com.example.examen1.AuthState
 import com.example.examen1.AuthViewModel
 import com.example.examen1.components.QuickAccessItem
 import com.example.examen1.models.ActiveProfileState
-import com.example.examen1.models.AllergenControl
-
 import com.example.examen1.models.ProfileType
-import com.example.examen1.ui.theme.DarkGreen
-import com.example.examen1.ui.theme.GradientEnd
-import com.example.examen1.ui.theme.GradientStart
-import com.example.examen1.ui.theme.LightBlue
 import com.example.examen1.ui.theme.MainGreen
-import com.example.examen1.ui.theme.MediumGreen
+import com.example.examen1.ui.theme.MainGreenDark
 import com.example.examen1.viewmodels.*
-import com.example.examen1.ui.theme.PrimaryPinkDark
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -167,12 +155,12 @@ fun HomePage(
                     Divider()
 
                     ListItem(
-                        headlineContent = { Text("Cerrar Sesión") },
+                        headlineContent = { Text("Cerrar Sesión", color = MaterialTheme.colorScheme.onSurface) },
                         leadingContent = {
                             Icon(
                                 Icons.Default.ExitToApp,
                                 contentDescription = null,
-                                tint = PrimaryPinkDark
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         },
                         modifier = Modifier.clickable {
@@ -199,11 +187,23 @@ fun HomePage(
                         Triple("Ajustes", Icons.Default.Settings, 3)
                     ).forEachIndexed { index, (label, icon, _) ->
                         NavigationBarItem(
-                            icon = { Icon(icon, contentDescription = label, tint = Color.White) },
+                            icon = {
+                                Icon(
+                                    icon,
+                                    contentDescription = label,
+                                    tint = if (selectedTabIndex == index)
+                                        Color.White
+                                    else
+                                        Color.White.copy(alpha = 0.7f)
+                                )
+                            },
                             label = {
                                 Text(
                                     text = label,
-                                    color = Color.White,
+                                    color = if (selectedTabIndex == index)
+                                        Color.White
+                                    else
+                                        Color.White.copy(alpha = 0.7f),
                                     style = MaterialTheme.typography.labelSmall,  // Fuente más pequeña
                                     maxLines = 1,  // Limitar a una línea
                                     overflow = TextOverflow.Ellipsis  // Manejar texto largo
@@ -211,9 +211,9 @@ fun HomePage(
                             },
                             selected = selectedTabIndex == index,
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White,
-                                unselectedIconColor = Color.White.copy(alpha = 0.7f),
-                                indicatorColor = MediumGreen
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                                indicatorColor = MainGreenDark
                             ),
                             onClick = {
                                 selectedTabIndex = index
@@ -250,9 +250,21 @@ fun HomePage(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        Brush.verticalGradient(
-                            colors = listOf(GradientEnd,GradientStart )
-                        )
+                        brush = if (isSystemInDarkTheme()) {
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.background,
+                                    MaterialTheme.colorScheme.background
+                                )
+                            )
+                        } else {
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.surface
+                                )
+                            )
+                        }
                     )
                     .padding(paddingValues),
             )  {
@@ -263,9 +275,11 @@ fun HomePage(
                             .fillMaxWidth()
                             .padding(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         ),
-                        elevation = CardDefaults.cardElevation(4.dp)
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = if (isSystemInDarkTheme()) 2.dp else 4.dp
+                        )
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -278,7 +292,7 @@ fun HomePage(
                                 Text(
                                     text = "Perfil Activo",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MainGreen,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold
                                 )
                                 IconButton(
@@ -287,7 +301,7 @@ fun HomePage(
                                     Icon(
                                         Icons.Default.Add,
                                         contentDescription = "Agregar perfil",
-                                        tint = MainGreen
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -313,9 +327,9 @@ fun HomePage(
                                             )
                                         },
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MainGreen,
-                                            selectedLabelColor = Color.White,
-                                            selectedLeadingIconColor = Color.White
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
                                         )
                                     )
                                 }
@@ -329,7 +343,7 @@ fun HomePage(
                     Text(
                         text = "Acceso Rápido",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
@@ -494,7 +508,7 @@ fun HomePage(
                             .fillMaxWidth()
                             .padding(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Row(
@@ -506,17 +520,21 @@ fun HomePage(
                         ) {
                             Text(
                                 text = "Últimos Registros",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
                             )
                             TextButton(onClick = { navController.navigate("history") }) {
-                                Text("Ver más")
+                                Text("Ver más", color = MaterialTheme.colorScheme.primary)
                             }
                         }
 
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
                         ) {
                             Column(
                                 modifier = Modifier.padding(8.dp)
@@ -531,24 +549,35 @@ fun HomePage(
                                             .take(3)
                                             .forEach { control ->
                                                 ListItem(
-                                                    headlineContent = { Text("Control de Alérgeno") },
+                                                    headlineContent = {
+                                                        Text(
+                                                            "Control de Alérgeno",
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    },
                                                     supportingContent = {
                                                         Column {
-                                                            Text("Tipo: ${control.controlType.displayName}")
+                                                            Text(
+                                                                "Tipo: ${control.controlType.displayName}",
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
                                                             val allergen = foodEntryViewModel.allergens.find { it.id == control.allergenId }
-                                                            Text(allergen?.name ?: "")
+                                                            Text(
+                                                                allergen?.name ?: "",
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
                                                         }
                                                     },
                                                     leadingContent = {
                                                         Icon(
                                                             Icons.Default.AddCircle,
                                                             contentDescription = null,
-                                                            tint = DarkGreen
+                                                            tint = MaterialTheme.colorScheme.primary
                                                         )
                                                     }
 
                                                 )
-                                                HorizontalDivider()
+                                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                                             }
 
                                         // Alimentos
@@ -557,9 +586,25 @@ fun HomePage(
                                             .take(3)
                                             .forEach { entry ->
                                                 ListItem(
-                                                    headlineContent = { Text("Alimentos") },
-                                                    supportingContent = { Text(entry.time) },
-                                                    leadingContent = { Icon(Icons.Default.Star, contentDescription = null) },
+                                                    headlineContent = {
+                                                        Text(
+                                                            "Alimentos",
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    },
+                                                    supportingContent = {
+                                                        Text(
+                                                            entry.time,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    },
+                                                    leadingContent = {
+                                                        Icon(
+                                                            Icons.Default.Star,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    },
                                                     trailingContent = { Text(dateFormatter.format(entry.date)) }
                                                 )
                                                 Divider()
@@ -571,9 +616,25 @@ fun HomePage(
                                             .take(3)
                                             .forEach { entry ->
                                                 ListItem(
-                                                    headlineContent = { Text("Síntomas") },
-                                                    supportingContent = { Text(entry.time) },
-                                                    leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+                                                    headlineContent = {
+                                                        Text(
+                                                            "Síntomas",
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    },
+                                                    supportingContent = {
+                                                        Text(
+                                                            entry.time,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                     },
+                                                    leadingContent = {
+                                                        Icon(
+                                                            Icons.Default.Info,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    },
                                                     trailingContent = { Text(dateFormatter.format(entry.date)) }
                                                 )
                                                 Divider()
@@ -585,9 +646,25 @@ fun HomePage(
                                             .take(3)
                                             .forEach { entry ->
                                                 ListItem(
-                                                    headlineContent = { Text("Deposición") },
-                                                    supportingContent = { Text(entry.time) },
-                                                    leadingContent = { Icon(Icons.Default.Check, contentDescription = null) },
+                                                    headlineContent = {
+                                                        Text(
+                                                            "Deposición",
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    },
+                                                    supportingContent = {
+                                                        Text(
+                                                            entry.time,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    },
+                                                    leadingContent = {
+                                                        Icon(
+                                                            Icons.Default.Check,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    },
                                                     trailingContent = { Text(dateFormatter.format(entry.date)) }
                                                 )
                                                 Divider()
@@ -748,12 +825,12 @@ fun HomePage(
     if (showActiveControlDialog) {
         AlertDialog(
             onDismissRequest = { showActiveControlDialog = false },
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(
                     text = "Control de Alérgeno Activo",
                     style = MaterialTheme.typography.titleLarge,
-                    color = DarkGreen
+                    color = MaterialTheme.colorScheme.primary
                 )
             },
             text = {
@@ -766,9 +843,9 @@ fun HomePage(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MediumGreen.copy(alpha = 0.1f)
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
                             ),
-                            border = BorderStroke(1.dp, MediumGreen)
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
@@ -777,28 +854,28 @@ fun HomePage(
                                 Text(
                                     text = "Tipo: ${control.controlType.displayName}",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = DarkGreen
+                                    color =  MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = "Alérgeno: ${allergen?.name ?: ""}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.DarkGray
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "Desde: ${dateFormatter.format(control.startDateAsDate)}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.DarkGray
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "Hasta: ${dateFormatter.format(control.endDateAsDate)}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.DarkGray
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (control.notes.isNotEmpty()) {
                                     Text(
                                         text = "Notas: ${control.notes}",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.DarkGray
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -810,7 +887,7 @@ fun HomePage(
                 TextButton(
                     onClick = { showActiveControlDialog = false },
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = MediumGreen
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text("Entendido")

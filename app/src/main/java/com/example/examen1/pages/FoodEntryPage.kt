@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
@@ -47,6 +45,7 @@ fun FoodEntryPage(
     profileId: String,
     tagViewModel: TagViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -140,14 +139,14 @@ fun FoodEntryPage(
             Text(
                 text = if (entryId != null) "Editar Registro" else "Nuevo Registro",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MainGreen
+                color = colorScheme.primary
             )
             // Controles Activos
             if (activeControls.value.isNotEmpty()) {
                 Text(
                     text = "(Preseleccionado por control activo)",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = colorScheme.primary
                 )
 
                 LazyRow(
@@ -156,9 +155,9 @@ fun FoodEntryPage(
                     items(activeControls.value) { control ->
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MainGreen.copy(alpha = 0.1f)
+                                containerColor = colorScheme.primaryContainer.copy(alpha = 0.1f)
                             ),
-                            border = BorderStroke(1.dp, MainGreen)
+                            border = BorderStroke(1.dp, colorScheme.primary)
                         ) {
                             Column(
                                 modifier = Modifier.padding(8.dp),
@@ -167,11 +166,12 @@ fun FoodEntryPage(
                                 Text(
                                     text = control.controlType.name,
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MainGreen
+                                    color = colorScheme.primary
                                 )
                                 Text(
                                     text = viewModel.allergens.find { it.id == control.allergenId }?.name ?: "",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colorScheme.onSurface
                                 )
                             }
                         }
@@ -203,11 +203,15 @@ fun FoodEntryPage(
                                     calendar.get(Calendar.MONTH),
                                     calendar.get(Calendar.DAY_OF_MONTH)
                                 ).show()
-                            }
+                            },
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = colorScheme.surface
+                        )
                     ) {
                         Text(
                             text = "Fecha: ${dateFormatter.format(selectedDate)}",
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
+                            color = colorScheme.onSurface
                         )
                     }
 
@@ -226,11 +230,15 @@ fun FoodEntryPage(
                                     currentTime[1].toInt(),
                                     true
                                 ).show()
-                            }
+                            },
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = colorScheme.surface
+                        )
                     ) {
                         Text(
                             text = "Hora: $selectedTime",
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
+                            color = colorScheme.onSurface
                         )
                     }
 
@@ -241,13 +249,20 @@ fun FoodEntryPage(
                         label = { Text("Notas adicionales") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        maxLines = 5
+                        maxLines = 5,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colorScheme.primary,
+                            unfocusedBorderColor = colorScheme.outline,
+                            focusedLabelColor = colorScheme.primary,
+                            unfocusedLabelColor = colorScheme.onSurfaceVariant
+                        )
                     )
                     // Sección de etiquetas
                     Column {
                         Text(
                             text = "Etiquetas:",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colorScheme.onSurface
                         )
 
                         LazyRow(
@@ -266,14 +281,18 @@ fun FoodEntryPage(
                                     },
                                     label = { Text(tag.name) },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex))
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex)),
+                                        selectedLabelColor = colorScheme.onPrimary
                                     )
                                 )
                             }
                         }
 
                         TextButton(
-                            onClick = { navController.navigate("tag_management") }
+                            onClick = { navController.navigate("tag_management") },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorScheme.primary
+                            )
                         ) {
                             Icon(Icons.Default.Edit, null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -289,13 +308,14 @@ fun FoodEntryPage(
                         ) {
                             Text(
                                 text = "Alérgenos:",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                color = colorScheme.onSurface
                             )
                             if (activeControls.value.isNotEmpty()) {
                                 Text(
                                     text = "(Bloqueado por control activo)",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.error
+                                    color = colorScheme.error
                                 )
                             }
                         }
@@ -412,10 +432,10 @@ fun FoodEntryPage(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MainGreen,
-                    contentColor = Color.White
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onPrimary
                 ),
-                shadowColor = MainGreen,
+                shadowColor = colorScheme.primary,
                 enabled = foodEntryState.value != FoodEntryState.Loading,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -435,6 +455,7 @@ fun AllergenItem(
     onSelectionChanged: (Boolean) -> Unit,
     enabled: Boolean = true
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Card(
         modifier = Modifier
             .aspectRatio(1f)
@@ -450,8 +471,8 @@ fun AllergenItem(
         colors = CardDefaults.cardColors(
             containerColor = when {
                 !enabled -> MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
-                allergen.isSelected -> MainGreen.copy(alpha = 0.1f)
-                else -> MaterialTheme.colorScheme.surface
+                allergen.isSelected -> colorScheme.primaryContainer.copy(alpha = 0.1f)
+                else -> colorScheme.surface
             }
         )
     ) {
@@ -467,16 +488,16 @@ fun AllergenItem(
                 contentDescription = allergen.name,
                 modifier = Modifier.size(32.dp),
                 tint = when {
-                    !enabled -> LocalContentColor.current.copy(alpha = 0.5f)
-                    allergen.isSelected -> MainGreen
-                    else -> LocalContentColor.current
+                    !enabled -> colorScheme.onSurface.copy(alpha = 0.5f)
+                    allergen.isSelected -> colorScheme.primary
+                    else -> colorScheme.onSurface
                 }
             )
             Text(
                 text = allergen.name,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 4.dp),
-                color = if (!enabled) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                color = if (!enabled) colorScheme.onSurface.copy(alpha = 0.5f)  else colorScheme.onSurface
             )
         }
     }

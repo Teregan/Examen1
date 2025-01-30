@@ -4,10 +4,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,11 +16,14 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,7 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,11 +46,6 @@ import androidx.navigation.NavController
 import com.example.examen1.AuthState
 import com.example.examen1.AuthViewModel
 import com.example.examen1.R
-import com.example.examen1.components.DecorativeCircles
-import com.example.examen1.components.InputField
-import com.example.examen1.models.ProfileState
-import com.example.examen1.ui.theme.DarkTextColor
-import com.example.examen1.ui.theme.LightGreen
 import com.example.examen1.viewmodels.ProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
@@ -58,6 +57,7 @@ fun SignupPage(
     authViewModel: AuthViewModel,
     profileViewModel: ProfileViewModel
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -110,95 +110,150 @@ fun SignupPage(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(colorScheme.background)
             .systemBarsPadding()
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        DecorativeCircles()
-
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = null,
-            modifier = Modifier
-                .size(120.dp)
-                .padding(vertical = 16.dp)
-        )
-
-        Text(
-            text = "Crear Cuenta",
-            style = MaterialTheme.typography.headlineMedium,
-            color = DarkTextColor,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Text(
-            text = "Regístrate para comenzar",
-            style = MaterialTheme.typography.bodyLarge,
-            color = DarkTextColor.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        InputField(
-            leadingIconRes = R.drawable.ic_person,
-            placeholderText = "Email",
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
-
-        InputField(
-            leadingIconRes = R.drawable.ic_key,
-            placeholderText = "Contraseña",
-            value = password,
-            onValueChange = { password = it },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
-
-        Button(
-            onClick = {
-                if (email.isNotBlank() && password.isNotBlank()) {
-                    authViewModel.signup(email, password)
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Por favor completa todos los campos",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            },
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(top = 32.dp, bottom = 16.dp)
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = LightGreen,
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                .height(240.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = if (isSystemInDarkTheme()) {
+                            listOf(
+                                colorScheme.surface,
+                                colorScheme.primaryContainer
+                            )
+                        } else {
+                            listOf(
+                                colorScheme.primaryContainer,
+                                colorScheme.surface
+                            )
+                        }
+                    )
+                )
         ) {
-            Text(
-                text = if (isLoading) "Creando cuenta..." else "Crear cuenta",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
+            Image(
+                painter = painterResource(R.drawable.logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(Alignment.Center)
             )
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (isSystemInDarkTheme()) 2.dp else 4.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Crear Cuenta",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "Regístrate para comenzar",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_person),
+                            contentDescription = null,
+                            tint = colorScheme.primary
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedLabelColor = colorScheme.primary,
+                        unfocusedLabelColor = colorScheme.onSurfaceVariant
+                    )
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_key),
+                            contentDescription = null,
+                            tint = colorScheme.primary
+                        )
+                    },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline,
+                        focusedLabelColor = colorScheme.primary,
+                        unfocusedLabelColor = colorScheme.onSurfaceVariant
+                    )
+                )
+
+                Button(
+                    onClick = {
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            authViewModel.signup(email, password)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Por favor completa todos los campos",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colorScheme.primary,
+                        contentColor = colorScheme.onPrimary
+                    ),
+                    enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                ) {
+                    Text(
+                        text = if (isLoading) "Creando cuenta..." else "Crear cuenta",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "¿Ya tienes una cuenta?",
                 style = MaterialTheme.typography.bodyMedium,
-                color = DarkTextColor.copy(alpha = 0.7f)
+                color = colorScheme.onBackground
             )
             TextButton(
                 onClick = { navController.navigate("login") }
@@ -206,7 +261,7 @@ fun SignupPage(
                 Text(
                     text = "Inicia sesión",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = LightGreen,
+                    color = colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
             }

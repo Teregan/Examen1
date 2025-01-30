@@ -30,6 +30,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -42,225 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.examen1.ui.theme.MainGreen
 import kotlin.math.abs
-import kotlin.math.min
-import kotlin.math.roundToInt
-
-
-
-// Funciones auxiliares para dibujar el pie chart
-private fun drawPieChart(
-    canvas: AndroidCanvas,
-    width: Int,
-    height: Int,
-    slices: List<PieChartSlice>
-) {
-    val center = PointF(width / 2f, height / 2f)
-    val radius = min(width, height) / 3f
-    var startAngle = -90f
-
-    val paint = Paint()
-    paint.style = Paint.Style.FILL
-
-    slices.forEach { slice ->
-        paint.color = android.graphics.Color.argb(
-            255,
-            (slice.color.red * 255).toInt(),
-            (slice.color.green * 255).toInt(),
-            (slice.color.blue * 255).toInt()
-        )
-
-        val path = AndroidPath()
-        path.moveTo(center.x, center.y)
-        path.arcTo(
-            RectF(
-                center.x - radius,
-                center.y - radius,
-                center.x + radius,
-                center.y + radius
-            ),
-            startAngle,
-            slice.value * 360,
-            false
-        )
-        path.close()
-
-        canvas.drawPath(path, paint)
-
-        startAngle += slice.value * 360
-    }
-}
-
-private fun drawLegend(
-    canvas: AndroidCanvas,
-    width: Int,
-    height: Int,
-    slices: List<PieChartSlice>
-) {
-    val legendPaint = Paint().apply {
-        color = android.graphics.Color.BLACK
-        textSize = 30f
-    }
-    val colorPaint = Paint().apply {
-        style = Paint.Style.FILL
-    }
-
-    var yOffset = height * 0.8f
-
-    slices.forEach { slice ->
-        // Dibujar color
-        colorPaint.color = android.graphics.Color.argb(
-            255,
-            (slice.color.red * 255).toInt(),
-            (slice.color.green * 255).toInt(),
-            (slice.color.blue * 255).toInt()
-        )
-        canvas.drawRect(
-            width * 0.1f,
-            yOffset - 20f,
-            width * 0.2f,
-            yOffset,
-            colorPaint
-        )
-
-        // Dibujar texto
-        canvas.drawText(
-            "${slice.name} (${(slice.value * 100).roundToInt()}%)",
-            width * 0.3f,
-            yOffset,
-            legendPaint
-        )
-
-        yOffset += 40f
-    }
-}
-
-@Composable
-private fun PieChart(
-    data: Map<String, Float>,
-    modifier: Modifier = Modifier,
-    onBitmapCreated: (Bitmap?) -> Unit = {}
-) {
-    Card(modifier = modifier) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(1f)
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    // Código existente del gráfico circular
-                    var startAngle = -90f
-                    val total = data.values.sum()
-
-                    data.forEach { (label, value) ->
-                        val sliceAngle = (value / total) * 360f
-                        drawArc(
-                            color = generateColorForLabel(label),
-                            startAngle = startAngle,
-                            sweepAngle = sliceAngle,
-                            useCenter = true
-                        )
-                        startAngle += sliceAngle
-                    }
-                }
-            }
-
-            // Agregamos la leyenda debajo del gráfico
-            Column(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                data.forEach { (label, value) ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(
-                                        color = generateColorForLabel(label),
-                                        shape = CircleShape
-                                    )
-                            )
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        Text(
-                            text = String.format("%.1f%%", (value / data.values.sum()) * 100),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimeSeriesDataRow(
-    date: String,
-    count: Int,
-    maxValue: Float
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Fecha
-        Text(
-            text = date,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.width(60.dp)
-        )
-
-        // Barra de progreso
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(24.dp)
-                .padding(horizontal = 8.dp)
-        ) {
-            // Fondo de la barra
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
-            )
-
-            // Barra de progreso
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth((count / maxValue).coerceIn(0f, 1f))
-                    .height(24.dp)
-                    .background(MainGreen.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
-            )
-
-            // Número de alérgenos
-            Text(
-                text = count.toString(),
-                color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 8.dp),
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
 
 @Composable
 fun StatisticsPage(
@@ -269,6 +52,7 @@ fun StatisticsPage(
     viewModel: StatisticsViewModel,
     profileViewModel: ProfileViewModel // Añadir como parámetro
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     var dateRange by remember {
         mutableStateOf(
             DateRange(
@@ -280,6 +64,8 @@ fun StatisticsPage(
 
     var selectedProfile by remember { mutableStateOf<UserProfile?>(null) }
     var selectedStatType by remember { mutableStateOf(StatType.ALL) }
+    var expandedDateFilter by remember { mutableStateOf(false) }
+    var expandedProfileFilter by remember { mutableStateOf(false) }
 
     // Estados de los datos
     val foodEntriesStats by viewModel.foodEntriesOverTime.observeAsState(initial = emptyList())
@@ -296,53 +82,162 @@ fun StatisticsPage(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(colorScheme.background)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Filtros Dinámicos
-        StatisticsFilterSection(
-            profiles = profiles,
-            onDateRangeChanged = { newRange ->
-                dateRange = newRange
-                viewModel.generateStatistics(newRange.start, newRange.end, selectedProfile?.id)
-            },
-            onProfileSelected = { profile ->
-                selectedProfile = profile
-                viewModel.generateStatistics(dateRange.start, dateRange.end, profile?.id)
-            },
-            onStatTypeChanged = { statType ->
-                selectedStatType = statType
-            }
+        Text(
+            text = "Estadísticas",
+            style = MaterialTheme.typography.headlineMedium,
+            color = colorScheme.primary
         )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Selector de perfil
+                Box {
+                    OutlinedButton(
+                        onClick = { expandedProfileFilter = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = colorScheme.primary
+                        )
+                    ) {
+                        Text(selectedProfile?.name ?: "Todos los perfiles")
+                    }
+
+                    DropdownMenu(
+                        expanded = expandedProfileFilter,
+                        onDismissRequest = { expandedProfileFilter = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Todos los perfiles") },
+                            onClick = {
+                                selectedProfile = null
+                                viewModel.generateStatistics(dateRange.start, dateRange.end, null)
+                                expandedProfileFilter = false
+                            }
+                        )
+                        profiles.forEach { profile ->
+                            DropdownMenuItem(
+                                text = { Text(profile.name) },
+                                onClick = {
+                                    selectedProfile = profile
+                                    viewModel.generateStatistics(dateRange.start, dateRange.end, profile.id)
+                                    expandedProfileFilter = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Selector de rango de fechas
+                Box {
+                    OutlinedButton(
+                        onClick = { expandedDateFilter = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = colorScheme.primary
+                        )
+                    ) {
+                        Text("Rango de fechas")
+                    }
+
+                    DropdownMenu(
+                        expanded = expandedDateFilter,
+                        onDismissRequest = { expandedDateFilter = false }
+                    ) {
+                        listOf(
+                            "Última Semana" to 7,
+                            "Último Mes" to 30,
+                            "Últimos 3 Meses" to 90
+                        ).forEach { (label, days) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    val endDate = Date()
+                                    val startDate = Date(endDate.time - days * 24 * 60 * 60 * 1000L)
+                                    dateRange = DateRange(startDate, endDate)
+                                    viewModel.generateStatistics(startDate, endDate, selectedProfile?.id)
+                                    expandedDateFilter = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         // Análisis Detallado
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colorScheme.surface
+            )
         ){
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Contenido del análisis
-                StatisticalInsightsCard(statisticalAnalysis)
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Análisis",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = statisticalAnalysis.summary,
+                    color = colorScheme.onSurface
+                )
+                if (statisticalAnalysis.alerts.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    statisticalAnalysis.alerts.forEach { alert ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = alert,
+                                color = colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
 
         // Gráficos
         Text(
-            "Visualización de Datos",
+            text = "Visualización de Datos",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            color = colorScheme.onSurface
         )
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             item {
                 if (foodEntriesStats.isNotEmpty()) {
                     StatisticChartCard(
-                        title = "Alérgenos Consumidos",
+                        title = "Alérgenos",
                         data = foodEntriesStats.associate {
                             it.name to it.percentage.toFloat()
                         }
@@ -352,7 +247,7 @@ fun StatisticsPage(
             item {
                 if (symptomFrequencyStats.isNotEmpty()) {
                     StatisticChartCard(
-                        title = "Frecuencia de Síntomas",
+                        title = "Síntomas",
                         data = symptomFrequencyStats.associate {
                             it.symptom to it.percentageOfEntries.toFloat()
                         }
@@ -362,7 +257,7 @@ fun StatisticsPage(
             item {
                 if (stoolTypeStats.isNotEmpty()) {
                     StatisticChartCard(
-                        title = "Tipos de Deposiciones",
+                        title = "Deposiciones",
                         data = stoolTypeStats.associate {
                             it.type to it.percentage.toFloat()
                         }
@@ -378,10 +273,14 @@ fun StatisticChartCard(
     title: String,
     data: Map<String, Float>
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Card(
         modifier = Modifier
             .width(280.dp)
-            .height(320.dp)
+            .height(320.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
@@ -392,7 +291,8 @@ fun StatisticChartCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
+                color = colorScheme.primary,
             )
 
             Box(
@@ -454,6 +354,7 @@ fun StatisticChartCard(
                         Text(
                             text = String.format("%.1f%%", value),
                             style = MaterialTheme.typography.bodySmall,
+                            color = colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                     }

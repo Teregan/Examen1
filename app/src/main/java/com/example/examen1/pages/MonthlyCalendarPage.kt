@@ -5,6 +5,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,13 +17,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,7 +33,6 @@ import androidx.navigation.NavController
 import com.example.examen1.models.FoodEntry
 import com.example.examen1.models.StoolEntry
 import com.example.examen1.models.SymptomEntry
-import com.example.examen1.ui.theme.*
 import com.example.examen1.viewmodels.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,6 +53,8 @@ fun MonthlyCalendarPage(
     stoolEntryViewModel: StoolEntryViewModel,
     profileId: String
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     val context = LocalContext.current
     val foodEntries = foodEntryViewModel.foodEntries.observeAsState(initial = emptyList())
     val symptomEntries = symptomEntryViewModel.symptomEntries.observeAsState(initial = emptyList())
@@ -119,6 +121,7 @@ fun MonthlyCalendarPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(colorScheme.background)
                 .padding(16.dp)
         ) {
             Row(
@@ -135,14 +138,14 @@ fun MonthlyCalendarPage(
                     Icon(
                         Icons.Default.ArrowBack,
                         contentDescription = "Mes anterior",
-                        tint = MainGreen
+                        tint = colorScheme.primary
                     )
                 }
 
                 Text(
                     text = dateFormatter.format(currentMonth.time).capitalize(),
                     style = MaterialTheme.typography.titleLarge,
-                    color = MainGreen
+                    color = colorScheme.primary
                 )
 
                 Row {
@@ -161,7 +164,7 @@ fun MonthlyCalendarPage(
                         Icon(
                             Icons.Default.Share,
                             contentDescription = "Exportar PDF",
-                            tint = MainGreen
+                            tint = colorScheme.primary
                         )
                     }
 
@@ -174,7 +177,7 @@ fun MonthlyCalendarPage(
                         Icon(
                             Icons.Default.ArrowForward,
                             contentDescription = "Mes siguiente",
-                            tint = MainGreen
+                            tint = colorScheme.primary
                         )
                     }
                 }
@@ -186,9 +189,18 @@ fun MonthlyCalendarPage(
                     .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                LegendItem(color = LightGreen, text = "Alimentos")
-                LegendItem(color = Color.Red.copy(alpha = 0.7f), text = "Síntomas")
-                LegendItem(color = Color.Blue.copy(alpha = 0.7f), text = "Deposiciones")
+                LegendItem(
+                    color = colorScheme.primary,
+                    text = "Alimentos"
+                )
+                LegendItem(
+                    color = colorScheme.error.copy(alpha = 0.7f),
+                    text = "Síntomas"
+                )
+                LegendItem(
+                    color = colorScheme.tertiary.copy(alpha = 0.7f),
+                    text = "Deposiciones"
+                )
             }
 
             // Cabecera de días
@@ -202,9 +214,9 @@ fun MonthlyCalendarPage(
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MainGreen
-                        )
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = colorScheme.primary
                     )
                 }
             }
@@ -274,7 +286,8 @@ fun LegendItem(color: Color, text: String) {
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -284,6 +297,7 @@ fun DayCell(
     dayData: DayData,
     onClick: () -> Unit
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -291,11 +305,12 @@ fun DayCell(
             .border(
                 width = 1.dp,
                 color = if (dayData.hasFoodEntry || dayData.hasSymptomEntry || dayData.hasStoolEntry)
-                    MainGreen.copy(alpha = 0.3f)
+                    colorScheme.primary.copy(alpha = 0.3f)
                 else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .background(if (isDarkTheme) colorScheme.surface else colorScheme.surface.copy(alpha = 0.7f)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -305,6 +320,7 @@ fun DayCell(
             Text(
                 text = dayData.day.toString(),
                 style = MaterialTheme.typography.bodyMedium,
+                color = colorScheme.onSurface,
                 fontWeight = FontWeight.Medium
             )
             if (dayData.hasFoodEntry || dayData.hasSymptomEntry || dayData.hasStoolEntry) {
@@ -316,21 +332,21 @@ fun DayCell(
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
-                                .background(LightGreen, CircleShape)
+                                .background(colorScheme.primary, CircleShape)
                         )
                     }
                     if (dayData.hasSymptomEntry) {
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
-                                .background(Color.Red.copy(alpha = 0.7f), CircleShape)
+                                .background(colorScheme.error.copy(alpha = 0.7f), CircleShape)
                         )
                     }
                     if (dayData.hasStoolEntry) {
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
-                                .background(Color.Blue.copy(alpha = 0.7f), CircleShape)
+                                .background(colorScheme.tertiary.copy(alpha = 0.7f), CircleShape)
                         )
                     }
                 }
@@ -380,13 +396,13 @@ fun DayDetailDialog(
                 Text(
                     text = "Registros del día ${dayData.day}",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MainGreen
+                    color = colorScheme.primary
                 )
 
                 if (dayFoodEntries.isNotEmpty()) {
                     EntrySection(
                         title = "Alimentos",
-                        color = LightGreen
+                        color = colorScheme.primary
                     ) {
                         dayFoodEntries.forEach { entry ->
                             EntryItem(
@@ -408,7 +424,7 @@ fun DayDetailDialog(
                 if (daySymptomEntries.isNotEmpty()) {
                     EntrySection(
                         title = "Síntomas",
-                        color = Color.Red.copy(alpha = 0.7f)
+                        color = colorScheme.error.copy(alpha = 0.7f)
                     ) {
                         daySymptomEntries.forEach { entry ->
                             EntryItem(
@@ -433,7 +449,7 @@ fun DayDetailDialog(
                 if (dayStoolEntries.isNotEmpty()) {
                     EntrySection(
                         title = "Deposiciones",
-                        color = Color.Blue.copy(alpha = 0.7f)
+                        color = colorScheme.tertiary.copy(alpha = 0.7f)
                     ) {
                         dayStoolEntries.forEach { entry ->
                             EntryItem(
@@ -499,7 +515,7 @@ private fun EntryItem(
             Text(
                 text = time,
                 style = MaterialTheme.typography.labelLarge,
-                color = PrimaryPinkDark
+                color = colorScheme.primary
             )
             Text(
                 text = details,

@@ -6,7 +6,9 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,9 +25,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -48,29 +53,15 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.examen1.AuthState
 import com.example.examen1.AuthViewModel
 import com.example.examen1.R
-import com.example.examen1.components.ActionButton
-import com.example.examen1.components.InputField
-import com.example.examen1.components.Message
-import com.example.examen1.components.DecorativeCircles
 import com.example.examen1.models.ProfileState
-import com.example.examen1.ui.theme.DarkTextColor
-import com.example.examen1.ui.theme.LightGreen
-import com.example.examen1.ui.theme.PrimaryPink
-import com.example.examen1.ui.theme.PrimaryPinkBlended
-import com.example.examen1.ui.theme.PrimaryPinkDark
-import com.example.examen1.ui.theme.PrimaryPinkLight
-import com.example.examen1.ui.theme.PrimaryYellow
-import com.example.examen1.ui.theme.PrimaryYellowDark
-import com.example.examen1.ui.theme.PrimaryYellowLight
+import com.example.examen1.ui.theme.MainGreen
+import com.example.examen1.ui.theme.MainGreenLight
 import com.example.examen1.viewmodels.ProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
@@ -82,21 +73,10 @@ fun LoginPage (
     authViewModel: AuthViewModel,
     profileViewModel: ProfileViewModel
 ) {
-    val backgroundGradient = arrayOf(
-        0f to PrimaryPinkBlended,
-        1f to PrimaryPink
-    )
-
-
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
+    val isDarkTheme = isSystemInDarkTheme()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-
     val authState = authViewModel.authState.observeAsState()
     val context = LocalContext.current
 
@@ -152,114 +132,160 @@ fun LoginPage (
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .systemBarsPadding()
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        DecorativeCircles()
-
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = null,
-            modifier = Modifier
-                .size(120.dp)
-                .padding(vertical = 16.dp)
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = "Bienvenido",
-            style = MaterialTheme.typography.headlineMedium,
-            color = DarkTextColor,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Text(
-            text = "Logueate para continuar",
-            style = MaterialTheme.typography.bodyLarge,
-            color = DarkTextColor.copy(alpha = 0.7f),
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        InputField(
-            leadingIconRes = R.drawable.ic_person,
-            placeholderText = "Email",
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
-
-        InputField(
-            leadingIconRes = R.drawable.ic_key,
-            placeholderText = "Clave",
-            value = password,
-            onValueChange = { password = it },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
-
-
-        Button(
-            onClick = {
-                if (email.isNotBlank() && password.isNotBlank()) {
-                    authViewModel.login(email, password)
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Por favor completa todos los campos",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            },
+    ) {
+        // Header con gradiente suave
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(top = 32.dp, bottom = 16.dp)
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = LightGreen,
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                .height(240.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = if (isDarkTheme) {
+                            listOf(
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.colorScheme.primaryContainer
+                            )
+                        } else {
+                            listOf(
+                                MainGreenLight,
+                                MainGreen.copy(alpha = 0.1f)
+                            )
+                        }
+                    )
+                )
         ) {
-            Text(
-                text = if (isLoading) "Ingresando..." else "Ingresar",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
+            Image(
+                painter = painterResource(R.drawable.logo),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(Alignment.Center)
             )
         }
-        Separator(
+
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 40.dp)
-                .height(62.dp)
-        )
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = if (isDarkTheme) 0.dp else 4.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Bienvenido",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = "Ingresa para continuar",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_person),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.ic_key),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                )
+
+                Button(
+                    onClick = {
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            authViewModel.login(email, password)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Por favor completa todos los campos",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                ) {
+                    Text(
+                        text = if (isLoading) "Ingresando..." else "Ingresar",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "¿No tienes una cuenta?",
                 style = MaterialTheme.typography.bodyMedium,
-                color = DarkTextColor.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onBackground
             )
             TextButton(
                 onClick = { navController.navigate("signup") }
             ) {
                 Text(
                     text = "Regístrate",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = LightGreen,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
-
     }
 }
 

@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.examen1.ui.theme.DarkTextColor
 
 @Composable
 fun Message(
@@ -19,6 +18,8 @@ fun Message(
     title: String,
     subtitle: String
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -28,7 +29,7 @@ fun Message(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyLarge,
-            color = DarkTextColor,
+            color = colorScheme.onSurface,
             fontWeight = FontWeight.Medium
         )
         Text(
@@ -36,7 +37,7 @@ fun Message(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.headlineMedium,
-            color = DarkTextColor,
+            color = colorScheme.onSurface,
             fontWeight = FontWeight.Black
         )
     }
