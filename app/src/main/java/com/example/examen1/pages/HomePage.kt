@@ -36,6 +36,9 @@ import com.example.examen1.ui.theme.MainGreenDark
 import com.example.examen1.viewmodels.*
 import java.text.SimpleDateFormat
 import java.util.Locale
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.BabyChangingStation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -373,7 +376,7 @@ fun HomePage(
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(modifier = Modifier.weight(1f)) {
                                 QuickAccessItem(
-                                    icon = Icons.Default.Star,
+                                    icon = Icons.Default.Restaurant,
                                     text = "Alimentos"
                                 ) {
                                     if (hasActiveProfile()) {
@@ -389,7 +392,7 @@ fun HomePage(
                         ) {
                             Box(modifier = Modifier.weight(1f)) {
                                 QuickAccessItem(
-                                    icon = Icons.Default.Warning,
+                                    icon = Icons.Default.MedicalServices,
                                     text = "Síntomas"
                                 ) {
                                     if (hasActiveProfile()) {
@@ -400,7 +403,7 @@ fun HomePage(
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(modifier = Modifier.weight(1f)) {
                                 QuickAccessItem(
-                                    icon = Icons.Default.CheckCircle,
+                                    icon = Icons.Default.BabyChangingStation,
                                     text = "Deposiciones"
                                 ) {
                                     if (hasActiveProfile()) {
@@ -600,7 +603,7 @@ fun HomePage(
                                                     },
                                                     leadingContent = {
                                                         Icon(
-                                                            Icons.Default.Star,
+                                                            Icons.Default.Restaurant,
                                                             contentDescription = null,
                                                             tint = MaterialTheme.colorScheme.primary
                                                         )
@@ -630,7 +633,7 @@ fun HomePage(
                                                      },
                                                     leadingContent = {
                                                         Icon(
-                                                            Icons.Default.Info,
+                                                            Icons.Default.MedicalServices,
                                                             contentDescription = null,
                                                             tint = MaterialTheme.colorScheme.primary
                                                         )
@@ -660,7 +663,7 @@ fun HomePage(
                                                     },
                                                     leadingContent = {
                                                         Icon(
-                                                            Icons.Default.Check,
+                                                            Icons.Default.BabyChangingStation,
                                                             contentDescription = null,
                                                             tint = MaterialTheme.colorScheme.primary
                                                         )
@@ -701,114 +704,6 @@ fun HomePage(
     }
 
     // Dialogs
-    /*if (showRegistroDialog) {
-        AlertDialog(
-            onDismissRequest = { showRegistroDialog = false },
-            title = { Text("Seleccione un registro") },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    activeProfileState.value?.let { state ->
-                        when (state) {
-                            is ActiveProfileState.Success -> {
-                                val profileId = state.profile.id
-
-                                // Botón de Control de Alérgenos
-                                Button(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DarkGreen,
-                                        contentColor = Color.White
-                                    ),
-                                    onClick = {
-                                        showRegistroDialog = false
-                                        navController.navigate("control_type/$profileId")
-                                    }
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Default.AccountCircle, contentDescription = null)
-                                        Text("Control de Alérgenos")
-                                    }
-                                }
-
-                                Button(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DarkGreen,
-                                        contentColor = Color.White
-                                    ),
-                                    onClick = {
-                                        showRegistroDialog = false
-                                        navController.navigate("food_entry/$profileId")
-                                    }
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Default.Star, contentDescription = null)
-                                        Text("Registro de Alimentos")
-                                    }
-                                }
-
-                                Button(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DarkGreen,
-                                        contentColor = Color.White
-                                    ),
-                                    onClick = {
-                                        showRegistroDialog = false
-                                        navController.navigate("symptom_entry/$profileId")
-                                    }
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Default.Info, contentDescription = null)
-                                        Text("Registro de Síntomas")
-                                    }
-                                }
-
-                                Button(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DarkGreen,
-                                        contentColor = Color.White
-                                    ),
-                                    onClick = {
-                                        showRegistroDialog = false
-                                        navController.navigate("stool_entry/$profileId")
-                                    }
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(Icons.Default.Check, contentDescription = null)
-                                        Text("Registro de Deposiciones")
-                                    }
-                                }
-                            }
-                            else -> Unit
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showRegistroDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }*/
 
     if (showAddProfileDialog) {
         ProfileDialog(

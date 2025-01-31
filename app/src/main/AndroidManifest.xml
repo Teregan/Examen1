@@ -35,7 +35,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="Aurim"
+            android:icon="@drawable/logo"
             android:theme="@style/Theme.Examen1">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -8,6 +8,8 @@ import com.example.examen1.models.ProfileType
 import com.example.examen1.models.UserProfile
 import com.example.examen1.viewmodels.*
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -38,9 +40,10 @@ class AuthViewModel(
 
     fun login(email: String, password: String) {
         if(email.isEmpty() || password.isEmpty()) {
-            _authState.value = AuthState.Error("Email or password can't be empty")
+            _authState.value = AuthState.Error("Por favor, complete todos los campos")
             return
         }
+
 
         _authState.value = AuthState.Loading
         auth.signInWithEmailAndPassword(email, password)
@@ -50,13 +53,21 @@ class AuthViewModel(
                 _authState.value = AuthState.Authenticated
             }
             .addOnFailureListener { exception ->
-                _authState.value = AuthState.Error(exception.message ?: "Something went wrong")
+                val errorMessage = when (exception) {
+                    is FirebaseAuthInvalidCredentialsException ->
+                        "Correo electrónico o contraseña incorrectos"
+                    is FirebaseAuthInvalidUserException ->
+                        "El usuario no existe. Verifica tus credenciales"
+                    else ->
+                        "Error de autenticación. Inténtalo de nuevo"
+                }
+                _authState.value = AuthState.Error(errorMessage)
             }
     }
 
     fun signup(email: String, password: String) {
         if (email.isEmpty() || password.isEmpty()) {
-            _authState.value = AuthState.Error("Email or password can't be empty")
+            _authState.value = AuthState.Error("El correo electrónico o la contraseña no pueden estar vacíos")
             return
         }
 
@@ -84,11 +95,11 @@ class AuthViewModel(
                 if (profileCreated) {
                     _authState.value = AuthState.Authenticated
                 } else {
-                    _authState.value = AuthState.Error("Error creating default profile")
+                    _authState.value = AuthState.Error("Error al crear el perfil por defecto")
                 }
 
             } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.message ?: "Something went wrong")
+                _authState.value = AuthState.Error(e.message ?: " Algo salio mal")
             }
         }
     }

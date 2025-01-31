@@ -264,7 +264,7 @@ fun HistoryPage(
                                     title = "Alimentos",
                                     date = entry.date,
                                     time = entry.time,
-                                    icon = Icons.Default.Star,
+                                    icon = Icons.Default.Restaurant,
                                     hasImages = false,
                                     onEdit = {
                                         val profileId = activeProfileState.value?.let {
@@ -286,7 +286,7 @@ fun HistoryPage(
                                     title = "Síntomas",
                                     date = entry.date,
                                     time = entry.time,
-                                    icon = Icons.Default.Info,
+                                    icon = Icons.Default.MedicalServices,
                                     hasImages = entry.imagesPaths.isNotEmpty(),
                                     onEdit = {
                                         navController.navigate("symptom_entry_edit/${entry.id}/$profileId")
@@ -305,7 +305,7 @@ fun HistoryPage(
                                     title = "Deposición",
                                     date = entry.date,
                                     time = entry.time,
-                                    icon = Icons.Default.Check,
+                                    icon = Icons.Default.BabyChangingStation,
                                     hasImages = entry.imagesPaths.isNotEmpty(),
                                     onEdit = {
                                         navController.navigate("stool_entry_edit/${entry.id}/$profileId")

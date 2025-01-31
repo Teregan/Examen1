@@ -17,7 +17,10 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.BabyChangingStation
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
@@ -85,7 +88,7 @@ fun AppDrawer(
 
         DrawerNavigationItem(
             text = "Registro Alimentos",
-            icon = Icons.Default.Star,
+            icon = Icons.Default.Restaurant,
             onClick = {
                 activeProfile.value?.let {
                     if (it is ActiveProfileState.Success) {
@@ -99,7 +102,7 @@ fun AppDrawer(
 
         DrawerNavigationItem(
             text = "Registro Sintomas",
-            icon = Icons.Default.Warning,
+            icon = Icons.Default.MedicalServices,
             onClick = {
                 activeProfile.value?.let {
                     if (it is ActiveProfileState.Success) {
@@ -113,7 +116,7 @@ fun AppDrawer(
 
         DrawerNavigationItem(
             text = "Registro Deposiciones",
-            icon = Icons.Default.Check,
+            icon = Icons.Default.BabyChangingStation,
             onClick = {
                 activeProfile.value?.let {
                     if (it is ActiveProfileState.Success) {
