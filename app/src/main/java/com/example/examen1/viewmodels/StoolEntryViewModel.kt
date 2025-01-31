@@ -93,11 +93,11 @@ class StoolEntryViewModel(private val imageManager: ImageManager) : BaseEntryVie
         val currentUserId = auth.currentUser?.uid ?: return
 
         cleanup()
+
         entriesListener = firestore.collection("stool_entries")
             .whereEqualTo("userId", currentUserId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.e("StoolEntryViewModel", "Error loading entries", error)
                     _stoolEntryState.value = StoolEntryState.Error(error.message ?: "Error loading entries")
                     return@addSnapshotListener
                 }
@@ -107,7 +107,6 @@ class StoolEntryViewModel(private val imageManager: ImageManager) : BaseEntryVie
                         try {
                             doc.toObject(StoolEntry::class.java)?.copy(id = doc.id)
                         } catch (e: Exception) {
-                            Log.e("StoolEntryViewModel", "Error converting document", e)
                             null
                         }
                     }

@@ -109,7 +109,6 @@ class SymptomEntryViewModel(private val imageManager: ImageManager) : BaseEntryV
             .whereEqualTo("userId", currentUserId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.e("SymptomEntryViewModel", "Error loading entries", error)
                     _symptomEntryState.value = SymptomEntryState.Error(error.message ?: "Error loading entries")
                     return@addSnapshotListener
                 }
@@ -119,7 +118,6 @@ class SymptomEntryViewModel(private val imageManager: ImageManager) : BaseEntryV
                         try {
                             doc.toObject(SymptomEntry::class.java)?.copy(id = doc.id)
                         } catch (e: Exception) {
-                            Log.e("SymptomEntryViewModel", "Error converting document", e)
                             null
                         }
                     }

@@ -68,7 +68,7 @@ fun MonthlyCalendarPage(
     val dayFormatter = SimpleDateFormat("dd", Locale.getDefault())
 
     // Calcular los datos del día
-    val daysData = remember(foodEntries.value, symptomEntries.value, stoolEntries.value, currentMonth) {
+    val daysData = remember(foodEntries.value, symptomEntries.value, stoolEntries.value, currentMonth, profileId) {
         val startOfMonth = Calendar.getInstance().apply {
             time = currentMonth.time
             set(Calendar.DAY_OF_MONTH, 1)
@@ -262,9 +262,9 @@ fun MonthlyCalendarPage(
             DayDetailDialog(
                 dayData = selectedDay!!,
                 currentMonth = currentMonth,
-                foodEntries = foodEntries.value,
-                symptomEntries = symptomEntries.value,
-                stoolEntries = stoolEntries.value,
+                foodEntries = foodEntries.value.filter { it.profileId == profileId },
+                symptomEntries = symptomEntries.value.filter { it.profileId == profileId },
+                stoolEntries = stoolEntries.value.filter { it.profileId == profileId },
                 foodEntryViewModel = foodEntryViewModel,
                 symptomEntryViewModel = symptomEntryViewModel,
                 onDismiss = { showDayDialog = false }
@@ -455,8 +455,8 @@ fun DayDetailDialog(
                             EntryItem(
                                 time = entry.time,
                                 details = buildString {
-                                    append("Tipo: ${entry.stoolType}")
-                                    append("\nColor: ${entry.color}")
+                                    append("Tipo: ${entry.stoolType.displayName}")
+                                    append("\nColor: ${entry.color.displayName}")
                                     if (entry.notes.isNotEmpty()) {
                                         append("\nNotas: ${entry.notes}")
                                     }

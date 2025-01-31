@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -16,10 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.examen1.components.ActionButton
 import com.example.examen1.models.ControlType
 import com.example.examen1.models.ControlTypeState
+import com.example.examen1.models.FoodEntryState
 import com.example.examen1.viewmodels.ControlTypeViewModel
 import com.example.examen1.viewmodels.FoodEntryViewModel
 import java.text.SimpleDateFormat
@@ -63,6 +69,7 @@ fun ControlTypePage(
         modifier = modifier
             .fillMaxSize()
             .background(colorScheme.background)
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -102,33 +109,78 @@ fun ControlTypePage(
         }
 
         // Allergen Selection Grid
-        Text(
-            "Alérgeno a Evaluar",
-            style = MaterialTheme.typography.titleMedium,
-            color = colorScheme.onSurface
-        )
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Column{
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Text(
+                    "Alérgeno a Evaluar",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colorScheme.onSurface
+                )
+
+            }
+        }
+        Surface(
             modifier = Modifier
+                .fillMaxWidth()
                 .height(240.dp)
-        ) {
-            items(allergens) { allergen ->
-                AllergenItem(
-                    allergen = allergen,
-                    onSelectionChanged = { isSelected ->
-                        allergens = allergens.map {
-                            if (it.id == allergen.id) {
-                                it.copy(isSelected = isSelected)
-                            } else {
-                                it.copy(isSelected = false)
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, colorScheme.outlineVariant),
+            color = colorScheme.surface.copy(alpha = 0.7f)
+        ){
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ){
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxSize()
+                ) {
+                    items(allergens) { allergen ->
+                        AllergenItem(
+                            allergen = allergen,
+                            onSelectionChanged = { isSelected ->
+                                allergens = allergens.map {
+                                    if (it.id == allergen.id) {
+                                        it.copy(isSelected = isSelected)
+                                    } else {
+                                        it.copy(isSelected = false)
+                                    }
+                                }
                             }
-                        }
+                        )
                     }
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 4.dp)
+                        .width(4.dp)
+                        .height(200.dp)
+                        .background(
+                            colorScheme.primary.copy(alpha = 0.1f),
+                            RoundedCornerShape(2.dp)
+                        )
                 )
             }
         }
+        Text(
+            text = "Desliza verticalmente para ver más alérgenos",
+            style = MaterialTheme.typography.bodySmall,
+            color = colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            textAlign = TextAlign.Center
+        )
+
 
         // Date Selection
         Row(
@@ -209,23 +261,22 @@ fun ControlTypePage(
             )
         )
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Save Button
-        Button(
-            onClick = {
+        ActionButton(
+            text = "Guardar Control",
+            isNavigationArrowVisible = false,
+            onClicked = {
                 if (selectedControlType == null) {
                     Toast.makeText(context, "Seleccione un tipo de control", Toast.LENGTH_SHORT).show()
-                    return@Button
+                    return@ActionButton
                 }
                 val selectedAllergenId = allergens.find { it.isSelected }?.id
                 if (selectedAllergenId == null) {
                     Toast.makeText(context, "Seleccione un alérgeno", Toast.LENGTH_SHORT).show()
-                    return@Button
+                    return@ActionButton
                 }
                 if (endDate.before(startDate)) {
                     Toast.makeText(context, "La fecha final debe ser posterior a la inicial", Toast.LENGTH_SHORT).show()
-                    return@Button
+                    return@ActionButton
                 }
 
                 controlTypeViewModel.addControl(
@@ -237,20 +288,16 @@ fun ControlTypePage(
                     notes = notes
                 )
             },
-            modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = colorScheme.primary,
                 contentColor = colorScheme.onPrimary
             ),
-            enabled = controlTypeState.value != ControlTypeState.Loading
-        ) {
-            Text(
-                text = "Guardar Control",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
+            shadowColor = colorScheme.primary,
+            enabled = controlTypeState.value != ControlTypeState.Loading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+        )
     }
 
     if (controlTypeState.value is ControlTypeState.Loading) {

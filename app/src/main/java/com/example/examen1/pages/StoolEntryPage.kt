@@ -31,6 +31,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.examen1.components.ActionButton
 import com.example.examen1.components.ImagePicker
+import com.example.examen1.models.FoodEntryState
 import com.example.examen1.models.StoolColor
 import com.example.examen1.models.StoolEntryState
 import com.example.examen1.models.StoolType
@@ -395,8 +396,10 @@ fun StoolEntryPage(
             }
 
             // Botón guardar
-            Button(
-                onClick = {
+            ActionButton(
+                text = if (entryId != null) "Actualizar Registro" else "Guardar Registro",
+                isNavigationArrowVisible = false,
+                onClicked = {
                     if (entryId != null) {
                         viewModel.updateStoolEntry(
                             entryId = entryId,
@@ -418,19 +421,13 @@ fun StoolEntryPage(
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorScheme.primary,
                     contentColor = colorScheme.onPrimary
                 ),
-                enabled = stoolEntryState.value != StoolEntryState.Loading
-            ) {
-                Text(
-                    text = if (entryId != null) "Actualizar" else "Guardar",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
+                shadowColor = colorScheme.primary,
+                enabled = stoolEntryState.value != StoolEntryState.Loading,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 }

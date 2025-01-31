@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
@@ -311,46 +314,86 @@ fun FoodEntryPage(
                                 style = MaterialTheme.typography.titleMedium,
                                 color = colorScheme.onSurface
                             )
-                            if (activeControls.value.isNotEmpty()) {
-                                Text(
-                                    text = "(Bloqueado por control activo)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = colorScheme.error
-                                )
-                            }
-                        }
+                            Text(
+                                text = "${selectedAllergens.count { it.isSelected }}/${selectedAllergens.size} seleccionados",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onSurfaceVariant
+                            )
 
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        }
+                        if (activeControls.value.isNotEmpty()) {
+                            Text(
+                                text = "(Bloqueado por control activo)",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colorScheme.error
+                            )
+                        }
+                        Surface(
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(vertical = 8.dp)
-                        ) {
-                            items(selectedAllergens) { allergen ->
-                                val hasActiveControl = activeControls.value
-                                    .filter { it.isCurrentlyActive() }
-                                    .any { it.allergenId == allergen.id }
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, colorScheme.outlineVariant),
+                            color = colorScheme.surface.copy(alpha = 0.7f)
+                        ){
+                            Box(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(3),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier
+                                        .padding(8.dp)
+                                        .fillMaxSize()
+                                ) {
+                                    items(selectedAllergens) { allergen ->
+                                        val hasActiveControl = activeControls.value
+                                            .filter { it.isCurrentlyActive() }
+                                            .any { it.allergenId == allergen.id }
 
 
-                                AllergenItem(
-                                    allergen = allergen,
-                                    onSelectionChanged = { isSelected ->
-                                        if (!hasActiveControl) {
-                                            selectedAllergens = selectedAllergens.map {
-                                                if (it.id == allergen.id) {
-                                                    it.copy(isSelected = isSelected)
-                                                } else {
-                                                    it
+                                        AllergenItem(
+                                            allergen = allergen,
+                                            onSelectionChanged = { isSelected ->
+                                                if (!hasActiveControl) {
+                                                    selectedAllergens = selectedAllergens.map {
+                                                        if (it.id == allergen.id) {
+                                                            it.copy(isSelected = isSelected)
+                                                        } else {
+                                                            it
+                                                        }
+                                                    }
                                                 }
-                                            }
-                                        }
-                                    },
-                                    enabled = true//!hasActiveControl && entryId == null
+                                            },
+                                            enabled = true//!hasActiveControl && entryId == null
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .padding(end = 4.dp)
+                                        .width(4.dp)
+                                        .height(200.dp)
+                                        .background(
+                                            colorScheme.primary.copy(alpha = 0.1f),
+                                            RoundedCornerShape(2.dp)
+                                        )
                                 )
                             }
+
                         }
+                        Text(
+                            text = "Desliza verticalmente para ver más alérgenos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            textAlign = TextAlign.Center
+                        )
                     }
                     Column {
                         Text(
