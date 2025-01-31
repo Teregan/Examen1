@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
@@ -25,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemColors
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
@@ -40,90 +43,160 @@ import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.viewmodels.ActiveProfileViewModel
 import androidx.compose.runtime.State
 import androidx.compose.runtime.livedata.observeAsState
+import com.example.examen1.AuthViewModel
 
 @Composable
 fun AppDrawer(
     navController: NavController,
     activeProfileViewModel: ActiveProfileViewModel,
+    authViewModel: AuthViewModel,
     onCloseDrawer: () -> Unit
 ) {
     val activeProfile = activeProfileViewModel.activeProfileState.observeAsState()
+    val colorScheme = MaterialTheme.colorScheme
 
     ModalDrawerSheet {
         DrawerHeader(activeProfile)
         Divider()
 
-        DrawerNavigationItem("Inicio", Icons.Default.Home) {
-            navController.navigate("home")
-            onCloseDrawer()
-        }
+        DrawerNavigationItem(
+            text = "Inicio",
+            icon = Icons.Default.Home,
+            onClick = {
+                navController.navigate("home")
+                onCloseDrawer()
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Control Alérgenos", Icons.Default.AddCircle) {
-            activeProfile.value?.let {
-                if (it is ActiveProfileState.Success) {
-                    navController.navigate("control_type/${it.profile.id}")
-                    onCloseDrawer()
+        DrawerNavigationItem(
+            text = "Control Alérgenos",
+            icon = Icons.Default.AddCircle,
+            onClick = {
+                activeProfile.value?.let {
+                    if (it is ActiveProfileState.Success) {
+                        navController.navigate("control_type/${it.profile.id}")
+                        onCloseDrawer()
+                    }
                 }
-            }
-        }
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Registro Alimentos", Icons.Default.Star) {
-            activeProfile.value?.let {
-                if (it is ActiveProfileState.Success) {
-                    navController.navigate("food_entry/${it.profile.id}")
-                    onCloseDrawer()
+        DrawerNavigationItem(
+            text = "Registro Alimentos",
+            icon = Icons.Default.Star,
+            onClick = {
+                activeProfile.value?.let {
+                    if (it is ActiveProfileState.Success) {
+                        navController.navigate("food_entry/${it.profile.id}")
+                        onCloseDrawer()
+                    }
                 }
-            }
-        }
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Registro Sintomas", Icons.Default.Warning) {
-            activeProfile.value?.let {
-                if (it is ActiveProfileState.Success) {
-                    navController.navigate("symptom_entry/${it.profile.id}")
-                    onCloseDrawer()
+        DrawerNavigationItem(
+            text = "Registro Sintomas",
+            icon = Icons.Default.Warning,
+            onClick = {
+                activeProfile.value?.let {
+                    if (it is ActiveProfileState.Success) {
+                        navController.navigate("symptom_entry/${it.profile.id}")
+                        onCloseDrawer()
+                    }
                 }
-            }
-        }
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Registro Deposiciones", Icons.Default.Check) {
-            activeProfile.value?.let {
-                if (it is ActiveProfileState.Success) {
-                    navController.navigate("stool_entry/${it.profile.id}")
-                    onCloseDrawer()
+        DrawerNavigationItem(
+            text = "Registro Deposiciones",
+            icon = Icons.Default.Check,
+            onClick = {
+                activeProfile.value?.let {
+                    if (it is ActiveProfileState.Success) {
+                        navController.navigate("stool_entry/${it.profile.id}")
+                        onCloseDrawer()
+                    }
                 }
-            }
-        }
-        DrawerNavigationItem("Etiquetas", Icons.Default.Edit) {
-            navController.navigate("tag_management")
-            onCloseDrawer()
-        }
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
+
+        DrawerNavigationItem(
+            text = "Etiquetas",
+            icon = Icons.Default.Edit,
+            onClick = {
+                navController.navigate("tag_management")
+                onCloseDrawer()
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
         Divider()
-        DrawerNavigationItem("Calendario", Icons.Default.DateRange) {
-            activeProfile.value?.let {
-                if (it is ActiveProfileState.Success) {
-                    navController.navigate("monthly_calendar/${it.profile.id}")
-                    onCloseDrawer()
+        DrawerNavigationItem(
+            text = "Calendario",
+            icon = Icons.Default.DateRange,
+            onClick = {
+                activeProfile.value?.let {
+                    if (it is ActiveProfileState.Success) {
+                        navController.navigate("monthly_calendar/${it.profile.id}")
+                        onCloseDrawer()
+                    }
                 }
-            }
-        }
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Estadisticas", Icons.Default.Analytics) {
-            navController.navigate("statistics")
-            onCloseDrawer()
-        }
+        DrawerNavigationItem(
+            text = "Estadisticas",
+            icon = Icons.Default.Analytics,
+            onClick = {
+                navController.navigate("statistics")
+                onCloseDrawer()
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Historial", Icons.Default.List) {
-            navController.navigate("history")
-            onCloseDrawer()
-        }
+        DrawerNavigationItem(
+            text = "Historial",
+            icon = Icons.Default.List,
+            onClick = {
+                navController.navigate("history")
+                onCloseDrawer()
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
-        DrawerNavigationItem("Correlaciones", Icons.Default.Face) {
-            navController.navigate("food_correlation")
-            onCloseDrawer()
-        }
+        DrawerNavigationItem(
+            text = "Correlaciones",
+            icon = Icons.Default.Face,
+            onClick = {
+                navController.navigate("food_correlation")
+                onCloseDrawer()
+            },
+            colors = NavigationDrawerItemDefaults.colors()
+        )
 
         Divider()
 
+        DrawerNavigationItem(
+            text = "Cerrar Sesión",
+            icon = Icons.Default.ExitToApp,
+            onClick = {
+                authViewModel.signout()
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
+                onCloseDrawer()
+            },
+            colors = NavigationDrawerItemDefaults.colors(
+                unselectedContainerColor = Color.Transparent,
+                unselectedIconColor = colorScheme.error,
+                unselectedTextColor = colorScheme.error
+            )
+        )
 
     }
 }
@@ -132,13 +205,15 @@ fun AppDrawer(
 private fun DrawerNavigationItem(
     text: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    colors: NavigationDrawerItemColors = NavigationDrawerItemDefaults.colors()
 ) {
     NavigationDrawerItem(
         icon = { Icon(icon, null) },
         label = { Text(text) },
         selected = false,
-        onClick = onClick
+        onClick = onClick,
+        colors = colors
     )
 }
 

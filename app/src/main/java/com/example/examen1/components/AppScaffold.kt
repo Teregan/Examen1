@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.examen1.AuthViewModel
 import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.viewmodels.ActiveProfileViewModel
 import kotlinx.coroutines.launch
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 fun AppScaffold(
     navController: NavController,
     activeProfileViewModel: ActiveProfileViewModel,
+    authViewModel: AuthViewModel,
     content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -43,9 +45,14 @@ fun AppScaffold(
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
-                AppDrawer(navController, activeProfileViewModel) {
-                    scope.launch { drawerState.close() }
-                }
+                AppDrawer(
+                    navController = navController,
+                    activeProfileViewModel = activeProfileViewModel,
+                    authViewModel = authViewModel,
+                    onCloseDrawer = {
+                        scope.launch { drawerState.close() }
+                    }
+                )
             },
             gesturesEnabled = true
         ) {

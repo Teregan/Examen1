@@ -36,7 +36,7 @@ fun MyAppNavigation(
         }
 
         composable("home") {
-            AppScaffold(navController, activeProfileViewModel) {
+            AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 HomePage(
                     modifier = modifier,
                     navController = navController,
@@ -52,7 +52,7 @@ fun MyAppNavigation(
         }
 
         composable("profiles") {
-            AppScaffold(navController, activeProfileViewModel) {
+            AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 ProfilesPage(
                     modifier = modifier,
                     navController = navController,
@@ -68,7 +68,7 @@ fun MyAppNavigation(
         ) { backStackEntry ->
             val profileId = backStackEntry.arguments?.getString("profileId")
             profileId?.let {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     ControlTypePage(
                         modifier = modifier,
                         navController = navController,
@@ -86,7 +86,7 @@ fun MyAppNavigation(
         ) { backStackEntry ->
             val profileId = backStackEntry.arguments?.getString("profileId")
             profileId?.let {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     FoodEntryPage(
                         modifier = modifier,
                         navController = navController,
@@ -109,7 +109,7 @@ fun MyAppNavigation(
             val entryId = backStackEntry.arguments?.getString("entryId")
             val profileId = backStackEntry.arguments?.getString("profileId")
             if (entryId != null && profileId != null) {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     FoodEntryPage(
                         modifier = modifier,
                         navController = navController,
@@ -129,7 +129,7 @@ fun MyAppNavigation(
         ) { backStackEntry ->
             val profileId = backStackEntry.arguments?.getString("profileId")
             profileId?.let {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     SymptomEntryPage(
                         modifier = modifier,
                         navController = navController,
@@ -150,7 +150,7 @@ fun MyAppNavigation(
             val entryId = backStackEntry.arguments?.getString("entryId")
             val profileId = backStackEntry.arguments?.getString("profileId")
             if (entryId != null && profileId != null) {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     SymptomEntryPage(
                         modifier = modifier,
                         navController = navController,
@@ -168,7 +168,7 @@ fun MyAppNavigation(
         ) { backStackEntry ->
             val profileId = backStackEntry.arguments?.getString("profileId")
             profileId?.let {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     StoolEntryPage(
                         modifier = modifier,
                         navController = navController,
@@ -189,7 +189,7 @@ fun MyAppNavigation(
             val entryId = backStackEntry.arguments?.getString("entryId")
             val profileId = backStackEntry.arguments?.getString("profileId")
             if (entryId != null && profileId != null) {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     StoolEntryPage(
                         modifier = modifier,
                         navController = navController,
@@ -204,7 +204,7 @@ fun MyAppNavigation(
         composable("monthly_calendar/{profileId}") { backStackEntry ->
             val profileId = backStackEntry.arguments?.getString("profileId")
             profileId?.let {
-                AppScaffold(navController, activeProfileViewModel) {
+                AppScaffold(navController, activeProfileViewModel, authViewModel) {
                     MonthlyCalendarPage(
                         navController = navController,
                         foodEntryViewModel = foodEntryViewModel,
@@ -217,7 +217,7 @@ fun MyAppNavigation(
         }
 
         composable("history") {
-            AppScaffold(navController, activeProfileViewModel) {
+            AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 HistoryPage(
                     modifier = modifier,
                     navController = navController,
@@ -229,7 +229,7 @@ fun MyAppNavigation(
         }
 
         composable("food_correlation") {
-            AppScaffold(navController, activeProfileViewModel) {
+            AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 FoodCorrelationPage(
                     modifier = modifier,
                     navController = navController,
@@ -250,7 +250,7 @@ fun MyAppNavigation(
         }
 
         composable("tag_management") {
-            AppScaffold(navController, activeProfileViewModel) {
+            AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 TagManagementPage(
                     navController = navController,
                     viewModel = tagViewModel
@@ -259,7 +259,7 @@ fun MyAppNavigation(
         }
 
         composable("statistics") {
-            AppScaffold(navController, activeProfileViewModel) {
+            AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 StatisticsPage(
                     modifier = modifier,
                     navController = navController,

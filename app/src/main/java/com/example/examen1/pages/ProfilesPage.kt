@@ -56,7 +56,7 @@ fun ProfilesPage(
                 showAddDialog = false
                 profileToEdit = null
                 // Si es el primer perfil creado, establecerlo como activo y navegar al home
-                if (profiles.value.size == 1) {
+                if (profiles.value.size == 1 && navController.previousBackStackEntry?.destination?.route in listOf("signup", "login")) {
                     profiles.value.firstOrNull()?.let { profile ->
                         activeProfileViewModel.setActiveProfile(profile)
                         navController.navigate("home") {
