@@ -1,15 +1,24 @@
 package com.example.examen1
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.examen1.components.AppScaffold
+import com.example.examen1.onboarding.screens.OnboardingScreen
+import com.example.examen1.onboarding.viewmodel.OnboardingViewModel
 import com.example.examen1.pages.*
+import com.example.examen1.utils.preferences.PreferencesManager
 import com.example.examen1.viewmodels.*
 
 @Composable
@@ -26,8 +35,38 @@ fun MyAppNavigation(
     tagViewModel: TagViewModel
 ) {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
-    NavHost(navController = navController, startDestination = "login") {
+    // Determinar la ruta inicial
+    val startDestination = remember {
+        if (PreferencesManager.isOnboardingCompleted(context)) {
+            "login"
+        } else {
+            "onboarding"
+        }
+    }
+
+    NavHost(navController = navController, startDestination = startDestination) {
+
+        composable("onboarding") {
+            val viewModel = remember { OnboardingViewModel() }
+            val state by viewModel.onboardingState.collectAsState()
+
+            OnboardingScreen(
+                viewModel = viewModel,
+                onNext = {
+                    if (state.onboardingComplete) {
+                        PreferencesManager.setOnboardingCompleted(context)
+                        navController.navigate("login") {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
+                    } else {
+                        viewModel.nextPage()
+                    }
+                }
+            )
+        }
+
         composable("login") {
             LoginPage(modifier, navController, authViewModel, profileViewModel)
         }
