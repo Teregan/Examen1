@@ -19,6 +19,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        val geminiApiKey = project.findProperty("GEMINI_API_KEY")?.toString() ?: "\"\""
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
@@ -39,6 +42,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -95,4 +99,6 @@ dependencies {
     implementation ("androidx.compose.material:material-icons-extended:1.5.4")
 
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+    implementation("com.google.ai.client.generativeai:generativeai:0.1.1")
 }

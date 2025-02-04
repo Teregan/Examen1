@@ -74,6 +74,12 @@ fun MyAppNavigation(
             SignupPage(modifier, navController, authViewModel, profileViewModel)
         }
 
+        composable("chatbot") {
+            ChatbotScreen(
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
         composable("home") {
             AppScaffold(navController, activeProfileViewModel, authViewModel) {
                 HomePage(

@@ -186,7 +186,7 @@ fun HomePage(
                     listOf(
                         Triple("Home", Icons.Default.Home, 0),
                         Triple("Calendario", Icons.Default.DateRange, 1),
-                        Triple("Informes", Icons.Default.Face, 2),
+                        Triple("Asistente IA", Icons.Default.SmartToy, 2),
                         Triple("Ajustes", Icons.Default.Settings, 3)
                     ).forEachIndexed { index, (label, icon, _) ->
                         NavigationBarItem(
@@ -229,11 +229,8 @@ fun HomePage(
                                         }
                                     }
                                     2 -> {
-                                        if (hasActiveProfile()) {
-                                            navController.navigate("food_correlation")
-                                        } else {
-                                            showNoActiveProfileMessage()
-                                        }
+                                          navController.navigate("chatbot")
+
                                     }
                                     3 -> {
                                         selectedTabIndex = index
