@@ -23,6 +23,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 
 enum class RecordType {
     ALL, FOOD, SYMPTOM, STOOL, CONTROL
@@ -47,9 +48,41 @@ fun HistoryPage(
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val activeProfileState = activeProfileViewModel.activeProfileState.observeAsState()
     val availableTags = tagViewModel.tags.observeAsState(initial = emptyList()) // Nuevo
+    var showMenu by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Historial") },
+                actions = {
+                    // Botón de menú
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
+                    }
+                    // Menú desplegable
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Exportar PDF") },
+                            onClick = {
+                                historyViewModel.generateAndShareHistoryPDF(context)
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -131,7 +164,7 @@ fun HistoryPage(
                         onExpandedChange = { expandedTypeMenu = it }
                     ) {
                         OutlinedTextField(
-                            value = when(recordType) {
+                            value = when (recordType) {
                                 RecordType.ALL -> "Todos los registros"
                                 RecordType.FOOD -> "Registros de alimentación"
                                 RecordType.SYMPTOM -> "Registros de síntomas"
@@ -213,7 +246,11 @@ fun HistoryPage(
                                     },
                                     label = { Text(tag.name) },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = Color(android.graphics.Color.parseColor(tag.colorHex)),
+                                        selectedContainerColor = Color(
+                                            android.graphics.Color.parseColor(
+                                                tag.colorHex
+                                            )
+                                        ),
                                         selectedLabelColor = colorScheme.onPrimary
                                     )
                                 )
@@ -251,6 +288,7 @@ fun HistoryPage(
                         color = colorScheme.primary
                     )
                 }
+
                 is HistoryState.Success -> {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -319,7 +357,11 @@ fun HistoryPage(
                                 HistoryEntryCard(
                                     title = "Control de Alérgeno - ${control.controlType.displayName}",
                                     date = control.startDateAsDate,
-                                    time = "Del ${dateFormatter.format(control.startDateAsDate)} al ${dateFormatter.format(control.endDateAsDate)} " +
+                                    time = "Del ${dateFormatter.format(control.startDateAsDate)} al ${
+                                        dateFormatter.format(
+                                            control.endDateAsDate
+                                        )
+                                    } " +
                                             if (!control.isCurrentlyActive()) "(Finalizado)" else "(Activo)",
                                     icon = Icons.Default.AddCircle,
                                     onEdit = {} // Los controles no se pueden editar
@@ -328,6 +370,7 @@ fun HistoryPage(
                         }
                     }
                 }
+
                 is HistoryState.Error -> {
                     Text(
                         text = state.message,
@@ -335,13 +378,15 @@ fun HistoryPage(
                         modifier = Modifier.padding(16.dp)
                     )
                 }
+
                 HistoryState.Initial -> {
                     // No mostrar nada en el estado inicial
                 }
+
                 else -> Unit
             }
         }
-
+    }
 }
 
 @Composable

@@ -47,6 +47,7 @@ import com.example.examen1.R
 import com.example.examen1.models.ProfileState
 import com.example.examen1.ui.theme.MainGreen
 import com.example.examen1.ui.theme.MainGreenLight
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.viewmodels.ProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -112,6 +113,7 @@ fun LoginPage(
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val alertsController = LocalAlertsController.current
 
     LaunchedEffect(authState.value) {
         when(val currentAuthState = authState.value) {
@@ -299,11 +301,11 @@ fun LoginPage(
                                 if (email.isNotBlank() && password.isNotBlank()) {
                                     authViewModel.login(email, password)
                                 } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Por favor completa todos los campos",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    alertsController.showWarningAlert(
+                                        title = "Aviso",
+                                        message = "Por favor completa todos los campos",
+                                        confirmText = "Entendido"
+                                    )
                                 }
                             }
                         ),
@@ -318,11 +320,11 @@ fun LoginPage(
                             if (email.isNotBlank() && password.isNotBlank()) {
                                 authViewModel.login(email, password)
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    "Por favor completa todos los campos",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                alertsController.showWarningAlert(
+                                    title = "Aviso",
+                                    message = "Por favor completa todos los campos",
+                                    confirmText = "Entendido"
+                                )
                             }
                         },
                         modifier = Modifier

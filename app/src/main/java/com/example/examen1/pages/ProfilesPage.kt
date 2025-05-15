@@ -1,5 +1,6 @@
 package com.example.examen1.pages
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -30,6 +31,7 @@ import com.example.examen1.models.UserProfile
 import com.example.examen1.models.ProfileState
 import com.example.examen1.viewmodels.ProfileViewModel
 import com.example.examen1.ui.theme.*
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.viewmodels.ActiveProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,11 +48,15 @@ fun ProfilesPage(
     val profiles = profileViewModel.profiles.observeAsState(initial = emptyList())
     val profileState = profileViewModel.profileState.observeAsState()
     val context = LocalContext.current
+    val alertsController = LocalAlertsController.current
 
     LaunchedEffect(profileState.value) {
         when (val state = profileState.value) {
             is ProfileState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                alertsController.showErrorAlert(
+                    title = "Error",
+                    message = state.message
+                )
             }
             is ProfileState.Success -> {
                 showAddDialog = false
@@ -129,7 +135,17 @@ fun ProfilesPage(
             },
             onSave = { profile ->
                 if (profileToEdit != null) {
-                    profileViewModel.updateProfile(profile.copy(id = profileToEdit!!.id))
+                    // Asegurarse de que isNursing se pase correctamente
+                    val updatedProfile = profile.copy(
+                        id = profileToEdit!!.id,
+                        isNursing = if (profile.profileType == ProfileType.INFANT) profile.isNursing else null
+                    )
+
+                    // Añadir logs para depuración
+                    Log.d("ProfilesPage", "Updating profile: $updatedProfile")
+                    Log.d("ProfilesPage", "isNursing value: ${updatedProfile.isNursing}")
+
+                    profileViewModel.updateProfile(updatedProfile)
                 } else {
                     profileViewModel.addProfile(profile)
                 }
@@ -207,7 +223,7 @@ fun ProfileCard(
             )
             if (profile.profileType == ProfileType.INFANT) {
                 Text(
-                    text = "Lactante: ${if (profile.isNursing == true) "Sí" else "No"}",
+                    text = "Lactante: ${if (profile.getNursingState() == true) "Sí" else "No"}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = colorScheme.onSurfaceVariant
                 )
@@ -219,7 +235,7 @@ fun ProfileCard(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("¿Eliminar perfil?") },
-            text = { Text("Esta acción no se puede deshacer.") },
+            text = { Text("Esta acción es definitiva. ¿Quieres continuar?") },
             confirmButton = {
                 TextButton(
                     onClick = {

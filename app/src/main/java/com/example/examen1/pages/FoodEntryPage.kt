@@ -2,6 +2,7 @@ package com.example.examen1.pages
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -29,8 +30,10 @@ import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
 
 import com.example.examen1.models.Allergen
+import com.example.examen1.models.ControlType
 import com.example.examen1.models.FoodEntryState
 import com.example.examen1.ui.theme.MainGreen
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.viewmodels.ControlTypeViewModel
 import com.example.examen1.viewmodels.FoodEntryViewModel
 import com.example.examen1.viewmodels.TagViewModel
@@ -52,6 +55,7 @@ fun FoodEntryPage(
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val alertsController = LocalAlertsController.current
 
     var selectedDate by remember { mutableStateOf(Date()) }
     var selectedTime by remember { mutableStateOf(timeFormatter.format(Date())) }
@@ -99,12 +103,34 @@ fun FoodEntryPage(
     // Efecto para actualizar los alérgenos cuando hay controles activos
     LaunchedEffect(activeControls.value) {
         val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
+        Log.d("FoodEntry", "Controles activos: ${currentlyActiveControls.size}")
+        // Primero, manejar los controles activos normales
         if (currentlyActiveControls.isNotEmpty()) {
-            // Mantener las selecciones existentes y solo preseleccionar los alérgenos de controles activos
+            currentlyActiveControls.forEach { control ->
+                Log.d("FoodEntry", "Control: ${control.controlType} para alérgeno ${control.allergenId}")
+            }
             selectedAllergens = viewModel.allergens.map { allergen ->
+                val eliminationControl = currentlyActiveControls.find {
+                    it.allergenId == allergen.id && it.controlType == ControlType.ELIMINATION
+                }
+                val controlledControl = currentlyActiveControls.find {
+                    it.allergenId == allergen.id && it.controlType == ControlType.CONTROLLED
+                }
+
+                Log.d("FoodEntry", "Alérgeno ${allergen.id}: elimination=${eliminationControl != null}, controlled=${controlledControl != null}")
+
                 allergen.copy(
-                    isSelected = allergen.isSelected ||
-                            currentlyActiveControls.any { it.allergenId == allergen.id }
+                    isSelected = when {
+                        eliminationControl != null -> {
+                            Log.d("FoodEntry", "Alérgeno ${allergen.id} bloqueado por eliminación")
+                            false
+                        }
+                        controlledControl != null -> {
+                            Log.d("FoodEntry", "Alérgeno ${allergen.id} seleccionado por control")
+                            true
+                        }
+                        else -> allergen.isSelected
+                    }
                 )
             }
         }
@@ -114,20 +140,24 @@ fun FoodEntryPage(
     LaunchedEffect(foodEntryState.value) {
         when (val state = foodEntryState.value) {
             is FoodEntryState.Success.Save -> {
-                Toast.makeText(
-                    context,
-                    if (entryId != null) "Registro actualizado" else "Registro guardado",
-                    Toast.LENGTH_SHORT
-                ).show()
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                }
+                alertsController.showSuccessAlert(
+                    title = "¡Éxito!",
+                    message = if (entryId != null) "Registro actualizado" else "Registro guardado",
+                    onConfirm = {
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    }
+                )
             }
             is FoodEntryState.Success.Load -> {
                 // No hacer nada, solo se ha cargado el registro
             }
             is FoodEntryState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                alertsController.showErrorAlert(
+                    title = "Error",
+                    message = state.message
+                )
             }
             else -> Unit
         }
@@ -357,7 +387,13 @@ fun FoodEntryPage(
                                         AllergenItem(
                                             allergen = allergen,
                                             onSelectionChanged = { isSelected ->
-                                                if (!hasActiveControl) {
+                                                val activeControl = activeControls.value
+                                                    .find {
+                                                        it.isCurrentlyActive() && it.allergenId == allergen.id
+                                                    }
+
+                                                // Si hay un control activo de tipo CONTROLLED, siempre permitir selección
+                                                if (activeControl == null || activeControl.controlType == ControlType.CONTROLLED) {
                                                     selectedAllergens = selectedAllergens.map {
                                                         if (it.id == allergen.id) {
                                                             it.copy(isSelected = isSelected)
@@ -367,7 +403,12 @@ fun FoodEntryPage(
                                                     }
                                                 }
                                             },
-                                            enabled = true//!hasActiveControl && entryId == null
+                                            enabled = activeControls.value
+                                                .find {
+                                                    it.isCurrentlyActive() &&
+                                                            it.allergenId == allergen.id &&
+                                                            it.controlType == ControlType.ELIMINATION
+                                                } == null
                                         )
                                     }
                                 }
@@ -445,11 +486,11 @@ fun FoodEntryPage(
                         .map { it.id }
 
                     if (selectedAllergenIds.isEmpty()) {
-                        Toast.makeText(
-                            context,
-                            "Debe seleccionar al menos un alérgeno",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        alertsController.showWarningAlert(
+                            title = "Aviso",
+                            message = "Debe seleccionar al menos un alérgeno",
+                            confirmText = "Entendido"
+                        )
                         return@ActionButton
                     }
 

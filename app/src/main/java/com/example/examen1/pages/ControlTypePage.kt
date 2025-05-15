@@ -26,6 +26,7 @@ import com.example.examen1.components.ActionButton
 import com.example.examen1.models.ControlType
 import com.example.examen1.models.ControlTypeState
 import com.example.examen1.models.FoodEntryState
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.viewmodels.ControlTypeViewModel
 import com.example.examen1.viewmodels.FoodEntryViewModel
 import java.text.SimpleDateFormat
@@ -43,23 +44,46 @@ fun ControlTypePage(
     val colorScheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val alertsController = LocalAlertsController.current
 
     var selectedControlType by remember { mutableStateOf<ControlType?>(null) }
     var startDate by remember { mutableStateOf(Date()) }
     var endDate by remember { mutableStateOf(Date()) }
     var notes by remember { mutableStateOf("") }
     var allergens by remember { mutableStateOf(foodEntryViewModel.allergens.map { it.copy() }) }
+    var wasSuccessful by remember { mutableStateOf(false) }
 
     val controlTypeState = controlTypeViewModel.controlTypeState.observeAsState()
 
+    LaunchedEffect(Unit) {
+        controlTypeViewModel.updateExpiredControls()
+    }
     LaunchedEffect(controlTypeState.value) {
         when (val state = controlTypeState.value) {
             is ControlTypeState.Success.Save -> {
-                Toast.makeText(context, "Control guardado exitosamente", Toast.LENGTH_SHORT).show()
-                navController.navigateUp()
+                if (!wasSuccessful) {
+                    wasSuccessful = true
+                    alertsController.showSuccessAlert(
+                        title = "¡Éxito!",
+                        message = "Control guardado exitosamente",
+                        onConfirm = {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        }
+                    )
+                }
             }
             is ControlTypeState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                val errorMessage = when {
+                    state.message.contains("ya existe un control de alérgeno activo", ignoreCase = true) ->
+                        "Ya existe un control de alérgeno activo para este perfil. Finaliza el control actual antes de crear uno nuevo."
+                    else -> state.message
+                }
+                alertsController.showErrorAlert(
+                    title = "Error",
+                    message = errorMessage
+                )
             }
             else -> Unit
         }
@@ -266,16 +290,28 @@ fun ControlTypePage(
             isNavigationArrowVisible = false,
             onClicked = {
                 if (selectedControlType == null) {
-                    Toast.makeText(context, "Seleccione un tipo de control", Toast.LENGTH_SHORT).show()
+                    alertsController.showWarningAlert(
+                        title = "Aviso",
+                        message = "Seleccione un alérgeno para continuar",
+                        confirmText = "Entendido"
+                    )
                     return@ActionButton
                 }
                 val selectedAllergenId = allergens.find { it.isSelected }?.id
                 if (selectedAllergenId == null) {
-                    Toast.makeText(context, "Seleccione un alérgeno", Toast.LENGTH_SHORT).show()
+                    alertsController.showWarningAlert(
+                        title = "Aviso",
+                        message = "Seleccione un alérgeno",
+                        confirmText = "Entendido"
+                    )
                     return@ActionButton
                 }
                 if (endDate.before(startDate)) {
-                    Toast.makeText(context, "La fecha final debe ser posterior a la inicial", Toast.LENGTH_SHORT).show()
+                    alertsController.showWarningAlert(
+                        title = "Aviso",
+                        message = "La fecha final debe ser posterior a la inicial",
+                        confirmText = "Entendido"
+                    )
                     return@ActionButton
                 }
 

@@ -6,11 +6,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.examen1.models.ProfileState
+import com.example.examen1.models.ProfileType
 import com.example.examen1.models.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -145,28 +147,25 @@ class ProfileViewModel : ViewModel() {
                 _profileState.value = ProfileState.Loading
 
                 profile.id?.let { id ->
-                    // Obtener el perfil actual para mantener los campos que no se modifican
-                    val currentProfile = firestore.collection("profiles")
-                        .document(id)
-                        .get()
-                        .await()
-                        .toObject(UserProfile::class.java)
-
-                    // Crear el perfil actualizado manteniendo los campos originales
-                    val updatedProfile = profile.copy(
-                        userId = currentProfile?.userId ?: profile.userId,
-                        createdAt = currentProfile?.createdAt ?: profile.createdAt
+                    // Crear un mapa con los campos a actualizar
+                    val updates = mapOf(
+                        "name" to profile.name,
+                        "profileType" to profile.profileType.name,
+                        "nursingStatus" to if (profile.profileType == ProfileType.INFANT) profile.isNursing else null
                     )
 
-                    // Actualizar el documento
+                    Log.d("ProfileViewModel", "Updating with: $updates")
+
+                    // Actualizar con el nuevo campo
                     firestore.collection("profiles")
                         .document(id)
-                        .set(updatedProfile)
+                        .update(updates)
                         .await()
 
                     _profileState.value = ProfileState.Success
                 } ?: throw Exception("Profile ID is required for update")
             } catch (e: Exception) {
+                Log.e("ProfileViewModel", "Error updating profile", e)
                 _profileState.value = ProfileState.Error(e.message ?: "Error updating profile")
             }
         }

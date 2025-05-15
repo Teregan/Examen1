@@ -12,8 +12,17 @@ data class UserProfile(
     val profileType: ProfileType = ProfileType.INFANT,
     val isInfant: Boolean = false,
     val isNursing: Boolean? = null,
+    val nursingStatus: Boolean? = null, // Nuevo campo con nombre diferente
     val createdAt: Long = System.currentTimeMillis()
-)
+){
+    fun getNursingState(): Boolean? {
+        return if (profileType == ProfileType.INFANT) {
+            nursingStatus ?: isNursing
+        } else {
+            null
+        }
+    }
+}
 
 sealed class ProfileState {
     object Loading : ProfileState()

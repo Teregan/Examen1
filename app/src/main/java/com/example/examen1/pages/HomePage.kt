@@ -39,6 +39,7 @@ import java.util.Locale
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.BabyChangingStation
+import com.example.examen1.utils.LocalAlertsController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +62,7 @@ fun HomePage(
     val stoolEntries = stoolEntryViewModel.stoolEntries.observeAsState(initial = emptyList())
     val activeControls = controlTypeViewModel.activeControls.observeAsState(initial = emptyList())
     val context = LocalContext.current
+    val alertsController = LocalAlertsController.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     // Agregar el estado para el diálogo
     val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
@@ -79,7 +81,6 @@ fun HomePage(
     var showAddProfileDialog by remember { mutableStateOf(false) }
     var showSettingsContent by remember { mutableStateOf(false) }
     var showActiveControlDialog by remember { mutableStateOf(false) }
-
     // Función para verificar si hay un perfil activo
     fun hasActiveProfile(): Boolean {
         return activeProfileState.value is ActiveProfileState.Success
@@ -87,11 +88,11 @@ fun HomePage(
 
     // Función para mostrar el mensaje de no hay perfil activo
     fun showNoActiveProfileMessage() {
-        Toast.makeText(
-            context,
-            "Selecciona un perfil para realizar esta acción",
-            Toast.LENGTH_SHORT
-        ).show()
+        alertsController.showWarningAlert(
+            title = "Aviso",
+            message = "Selecciona un perfil para realizar esta acción",
+            confirmText = "Entendido"
+        )
     }
 
     LaunchedEffect(authState.value) {
@@ -105,7 +106,9 @@ fun HomePage(
         activeProfileViewModel.loadLastActiveProfile()
     }
 
+
     LaunchedEffect(activeProfileState.value) {
+
         when (activeProfileState.value) {
             is ActiveProfileState.Success -> {
                 val profileId = (activeProfileState.value as ActiveProfileState.Success).profile.id
@@ -119,10 +122,7 @@ fun HomePage(
         }
     }
     // Agregar este LaunchedEffect después de obtener los controles activos
-    LaunchedEffect(activeControls.value) {
-        val currentlyActiveControls = activeControls.value.filter { it.isCurrentlyActive() }
-        showActiveControlDialog = currentlyActiveControls.isNotEmpty()
-    }
+
 
     if (showSettingsContent) {
         Column(
@@ -518,6 +518,7 @@ fun HomePage(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+
                             Text(
                                 text = "Últimos Registros",
                                 style = MaterialTheme.typography.titleMedium,
@@ -714,7 +715,7 @@ fun HomePage(
         )
     }
 
-    if (showActiveControlDialog) {
+    /*if (showActiveControlDialog) {
         AlertDialog(
             onDismissRequest = { showActiveControlDialog = false },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -790,6 +791,6 @@ fun HomePage(
                 dismissOnClickOutside = true
             )
         )
-    }
+    }*/
 }
 

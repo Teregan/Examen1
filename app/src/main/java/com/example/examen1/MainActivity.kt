@@ -20,9 +20,14 @@ import com.example.examen1.viewmodels.StoolEntryViewModel
 import com.example.examen1.viewmodels.SymptomEntryViewModel
 import com.example.examen1.viewmodels.HistoryViewModel
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.examen1.components.SweetAlert
+import com.example.examen1.components.SweetToast
+import com.example.examen1.utils.AlertsController
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.utils.image.ImageManager
 import com.example.examen1.viewmodels.ControlTypeViewModel
 import com.example.examen1.viewmodels.StoolEntryViewModelFactory
@@ -30,7 +35,7 @@ import com.example.examen1.viewmodels.SymptomEntryViewModelFactory
 import com.example.examen1.viewmodels.TagViewModel
 
 class MainActivity : ComponentActivity() {
-
+    private val alertsController = AlertsController()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,22 +94,49 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            Examen1Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MyAppNavigation(
-                        modifier = Modifier.padding(innerPadding),
-                        authViewModel = authViewModel,
-                        profileViewModel = profileViewModel,
-                        activeProfileViewModel = activeProfileViewModel,
-                        foodEntryViewModel = foodEntryViewModel,
-                        symptomEntryViewModel = symptomEntryViewModel,
-                        stoolEntryViewModel = stoolEntryViewModel,
-                        historyViewModel = historyViewModel,
-                        controlTypeViewModel = controlEntryViewModel,
-                        tagViewModel = TagViewModel()
-                    )
+            CompositionLocalProvider(LocalAlertsController provides alertsController) {
+                Examen1Theme {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        MyAppNavigation(
+                            modifier = Modifier.padding(innerPadding),
+                            authViewModel = authViewModel,
+                            profileViewModel = profileViewModel,
+                            activeProfileViewModel = activeProfileViewModel,
+                            foodEntryViewModel = foodEntryViewModel,
+                            symptomEntryViewModel = symptomEntryViewModel,
+                            stoolEntryViewModel = stoolEntryViewModel,
+                            historyViewModel = historyViewModel,
+                            controlTypeViewModel = controlEntryViewModel,
+                            tagViewModel = TagViewModel()
+                        )
+
+                        with(alertsController) {
+                            SweetAlert(
+                                show = showAlert,
+                                type = alertType,
+                                title = alertTitle,
+                                message = alertMessage,
+                                confirmText = alertConfirmText,
+                                onConfirm = {
+                                    alertOnConfirm()
+                                    hideAlert()
+                                },
+                                onDismiss = { hideAlert() },
+                                autoDismissTime = alertAutoDismissTime
+                            )
+
+                            SweetToast(
+                                message = toastMessage,
+                                show = showToast,
+                                type = toastType,
+                                duration = toastDuration,
+                                onDismiss = { hideToast() }
+                            )
+                        }
+                    }
                 }
             }
+
         }
     }
 }

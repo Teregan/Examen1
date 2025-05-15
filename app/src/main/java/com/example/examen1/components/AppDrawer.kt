@@ -101,7 +101,7 @@ fun AppDrawer(
         )
 
         DrawerNavigationItem(
-            text = "Registro Sintomas",
+            text = "Registro Síntomas",
             icon = Icons.Default.MedicalServices,
             onClick = {
                 activeProfile.value?.let {
@@ -153,7 +153,7 @@ fun AppDrawer(
         )
 
         DrawerNavigationItem(
-            text = "Estadisticas",
+            text = "Estadísticas",
             icon = Icons.Default.Analytics,
             onClick = {
                 navController.navigate("statistics")

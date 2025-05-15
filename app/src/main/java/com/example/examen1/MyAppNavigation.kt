@@ -179,6 +179,7 @@ fun MyAppNavigation(
                         modifier = modifier,
                         navController = navController,
                         viewModel = symptomEntryViewModel,
+                        foodEntryViewModel = foodEntryViewModel,
                         profileId = it
                     )
                 }
@@ -200,6 +201,7 @@ fun MyAppNavigation(
                         modifier = modifier,
                         navController = navController,
                         viewModel = symptomEntryViewModel,
+                        foodEntryViewModel = foodEntryViewModel,
                         entryId = entryId,
                         profileId = profileId
                     )
@@ -218,6 +220,8 @@ fun MyAppNavigation(
                         modifier = modifier,
                         navController = navController,
                         viewModel = stoolEntryViewModel,
+                        foodEntryViewModel = foodEntryViewModel,
+                        symptomEntryViewModel = symptomEntryViewModel,
                         profileId = it
                     )
                 }
@@ -239,6 +243,8 @@ fun MyAppNavigation(
                         modifier = modifier,
                         navController = navController,
                         viewModel = stoolEntryViewModel,
+                        foodEntryViewModel = foodEntryViewModel,
+                        symptomEntryViewModel = symptomEntryViewModel,
                         entryId = entryId,
                         profileId = profileId
                     )
@@ -255,6 +261,7 @@ fun MyAppNavigation(
                         foodEntryViewModel = foodEntryViewModel,
                         symptomEntryViewModel = symptomEntryViewModel,
                         stoolEntryViewModel = stoolEntryViewModel,
+                        controlTypeViewModel = controlTypeViewModel,
                         profileId = it
                     )
                 }

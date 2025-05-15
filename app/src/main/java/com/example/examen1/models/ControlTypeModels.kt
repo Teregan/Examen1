@@ -2,6 +2,7 @@ package com.example.examen1.models
 
 import android.util.Log
 import com.google.firebase.Timestamp
+import java.util.Calendar
 import java.util.Date
 
 data class AllergenControl(
@@ -23,10 +24,32 @@ data class AllergenControl(
         get() = endDate.toDate()
 
     fun isCurrentlyActive(): Boolean {
-        val currentDate = Date()
-        return isActive &&
-                !currentDate.before(startDateAsDate) &&
-                !currentDate.after(endDateAsDate)
+        val currentDate = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.time
+
+        val startCalendar = Calendar.getInstance().apply {
+            time = startDateAsDate
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val endCalendar = Calendar.getInstance().apply {
+            time = endDateAsDate
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
+        }
+
+        return startCalendar.time <= currentDate &&
+                endCalendar.time >= currentDate &&
+                isActive
     }
 }
 

@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.examen1.models.FoodEntry
@@ -36,13 +37,20 @@ import com.example.examen1.models.SymptomEntry
 import com.example.examen1.viewmodels.*
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.window.Popup
+import com.example.examen1.models.AllergenControl
 
 data class DayData(
     val day: Int,
     val hasFoodEntry: Boolean = false,
     val hasSymptomEntry: Boolean = false,
-    val hasStoolEntry: Boolean = false
+    val hasStoolEntry: Boolean = false,
+    val hasControlEntry: Boolean = false,
+    val controlTypes: List<String> = emptyList()
 )
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +59,8 @@ fun MonthlyCalendarPage(
     foodEntryViewModel: FoodEntryViewModel,
     symptomEntryViewModel: SymptomEntryViewModel,
     stoolEntryViewModel: StoolEntryViewModel,
-    profileId: String
+    profileId: String,
+    controlTypeViewModel: ControlTypeViewModel
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -63,50 +72,88 @@ fun MonthlyCalendarPage(
     var currentMonth by remember { mutableStateOf(Calendar.getInstance()) }
     var selectedDay by remember { mutableStateOf<DayData?>(null) }
     var showDayDialog by remember { mutableStateOf(false) }
+    var controlsInRange by remember { mutableStateOf<List<AllergenControl>>(emptyList()) }
+
 
     val dateFormatter = SimpleDateFormat("MMMM yyyy", Locale("es", "ES"))
     val dayFormatter = SimpleDateFormat("dd", Locale.getDefault())
 
-    // Calcular los datos del día
-    val daysData = remember(foodEntries.value, symptomEntries.value, stoolEntries.value, currentMonth, profileId) {
-        val startOfMonth = Calendar.getInstance().apply {
+    val startOfMonth = remember(currentMonth) {
+        Calendar.getInstance().apply {
             time = currentMonth.time
             set(Calendar.DAY_OF_MONTH, 1)
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
         }.time
+    }
 
-        val endOfMonth = Calendar.getInstance().apply {
+    val endOfMonth = remember(currentMonth) {
+        Calendar.getInstance().apply {
             time = currentMonth.time
             set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH))
             set(Calendar.HOUR_OF_DAY, 23)
             set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
         }.time
+    }
 
+    // Usar LaunchedEffect para cargar los controles del mes
+    LaunchedEffect(currentMonth, profileId) {
+        controlsInRange = controlTypeViewModel.searchByDateRange(startOfMonth, endOfMonth, profileId)
+    }
+
+    // Calcular los datos del día
+    val daysData = remember(foodEntries.value, symptomEntries.value, stoolEntries.value, currentMonth, profileId, controlsInRange) {
         val daysInMonth = currentMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
+
         (1..daysInMonth).map { day ->
-            val currentDate = Calendar.getInstance().apply {
+            val dayStart = Calendar.getInstance().apply {
                 time = currentMonth.time
                 set(Calendar.DAY_OF_MONTH, day)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
             }.time
+
+            val dayEnd = Calendar.getInstance().apply {
+                time = currentMonth.time
+                set(Calendar.DAY_OF_MONTH, day)
+                set(Calendar.HOUR_OF_DAY, 23)
+                set(Calendar.MINUTE, 59)
+                set(Calendar.SECOND, 59)
+            }.time
+
+            // Determinar qué controles están activos para este día
+            val activeControls = controlsInRange.filter { control ->
+                val controlStart = control.startDateAsDate.time
+                val controlEnd = control.endDateAsDate.time
+                // Un control está activo si el día actual está dentro del rango de fechas del control
+                (dayStart.time <= controlEnd && dayEnd.time >= controlStart)
+            }
+
+            // Extraer los tipos de control
+            val controlTypeNames = activeControls.map { it.controlType.displayName }
 
             DayData(
                 day = day,
                 hasFoodEntry = foodEntries.value.any {
                     it.profileId == profileId &&
                             dayFormatter.format(it.date).toInt() == day &&
-                            it.date in startOfMonth..endOfMonth
+                            (it.date.time >= startOfMonth.time && it.date.time <= endOfMonth.time)
                 },
                 hasSymptomEntry = symptomEntries.value.any {
                     it.profileId == profileId &&
                             dayFormatter.format(it.date).toInt() == day &&
-                            it.date in startOfMonth..endOfMonth
+                            (it.date.time >= startOfMonth.time && it.date.time <= endOfMonth.time)
                 },
                 hasStoolEntry = stoolEntries.value.any {
                     it.profileId == profileId &&
                             dayFormatter.format(it.date).toInt() == day &&
-                            it.date in startOfMonth..endOfMonth
-                }
+                            (it.date.time >= startOfMonth.time && it.date.time <= endOfMonth.time)
+                },
+                hasControlEntry = activeControls.isNotEmpty(),
+                controlTypes = controlTypeNames
             )
         }
     }
@@ -259,12 +306,25 @@ fun MonthlyCalendarPage(
 
         // Diálogo de detalle del día
         if (showDayDialog && selectedDay != null) {
+            val selectedDate = Calendar.getInstance().apply {
+                time = currentMonth.time
+                set(Calendar.DAY_OF_MONTH, selectedDay!!.day)
+            }.time
+
+            // Filtrar los controles para el día seleccionado
+            val dayControls = controlsInRange.filter { control ->
+                val controlStart = control.startDateAsDate.time
+                val controlEnd = control.endDateAsDate.time
+                selectedDate.time >= controlStart && selectedDate.time <= controlEnd
+            }
+
             DayDetailDialog(
                 dayData = selectedDay!!,
                 currentMonth = currentMonth,
                 foodEntries = foodEntries.value.filter { it.profileId == profileId },
                 symptomEntries = symptomEntries.value.filter { it.profileId == profileId },
                 stoolEntries = stoolEntries.value.filter { it.profileId == profileId },
+                controlEntries = dayControls, // Pasar los controles filtrados
                 foodEntryViewModel = foodEntryViewModel,
                 symptomEntryViewModel = symptomEntryViewModel,
                 onDismiss = { showDayDialog = false }
@@ -298,19 +358,31 @@ fun DayCell(
     onClick: () -> Unit
 ) {
     val isDarkTheme = isSystemInDarkTheme()
+
+    // Para el tooltip
+    var showTooltip by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(8.dp))
             .border(
                 width = 1.dp,
-                color = if (dayData.hasFoodEntry || dayData.hasSymptomEntry || dayData.hasStoolEntry)
+                color = if (dayData.hasFoodEntry || dayData.hasSymptomEntry ||
+                    dayData.hasStoolEntry || dayData.hasControlEntry)
                     colorScheme.primary.copy(alpha = 0.3f)
                 else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
             .clickable(onClick = onClick)
-            .background(if (isDarkTheme) colorScheme.surface else colorScheme.surface.copy(alpha = 0.7f)),
+            .background(if (isDarkTheme) colorScheme.surface else colorScheme.surface.copy(alpha = 0.7f))
+            // Mostrar tooltip al mantener presionado
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = { showTooltip = true },
+                    onTap = { onClick() }
+                )
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -323,31 +395,81 @@ fun DayCell(
                 color = colorScheme.onSurface,
                 fontWeight = FontWeight.Medium
             )
-            if (dayData.hasFoodEntry || dayData.hasSymptomEntry || dayData.hasStoolEntry) {
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+
+            // Indicadores visuales de entradas
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                if (dayData.hasFoodEntry) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(colorScheme.primary, CircleShape)
+                    )
+                }
+                if (dayData.hasSymptomEntry) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(colorScheme.error.copy(alpha = 0.7f), CircleShape)
+                    )
+                }
+                if (dayData.hasStoolEntry) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(colorScheme.tertiary.copy(alpha = 0.7f), CircleShape)
+                    )
+                }
+                if (dayData.hasControlEntry) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(colorScheme.secondary.copy(alpha = 0.7f), CircleShape)
+                    )
+                }
+            }
+
+            // Si hay controles, mostrar un pequeño indicador textual
+            if (dayData.hasControlEntry && dayData.controlTypes.isNotEmpty()) {
+                Text(
+                    text = "C",  // "C" de Control, abreviado por espacio
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 8.sp,
+                    color = colorScheme.secondary
+                )
+            }
+        }
+
+        // Tooltip emergente con detalles
+        if (showTooltip && dayData.hasControlEntry) {
+            Popup(
+                alignment = Alignment.BottomCenter,
+                onDismissRequest = { showTooltip = false }
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .widthIn(max = 200.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                    shadowElevation = 4.dp
                 ) {
-                    if (dayData.hasFoodEntry) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(colorScheme.primary, CircleShape)
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            text = "Controles activos:",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = colorScheme.onSurfaceVariant
                         )
-                    }
-                    if (dayData.hasSymptomEntry) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(colorScheme.error.copy(alpha = 0.7f), CircleShape)
-                        )
-                    }
-                    if (dayData.hasStoolEntry) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(colorScheme.tertiary.copy(alpha = 0.7f), CircleShape)
-                        )
+                        dayData.controlTypes.forEach { type ->
+                            Text(
+                                text = "• $type",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -362,11 +484,14 @@ fun DayDetailDialog(
     foodEntries: List<FoodEntry>,
     symptomEntries: List<SymptomEntry>,
     stoolEntries: List<StoolEntry>,
+    controlEntries: List<AllergenControl>, // Cambiado de controlsInRange a controlEntries para mayor claridad
     foodEntryViewModel: FoodEntryViewModel,
     symptomEntryViewModel: SymptomEntryViewModel,
     onDismiss: () -> Unit
 ) {
-    val dateFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+
     val dayDate = Calendar.getInstance().apply {
         time = currentMonth.time
         set(Calendar.DAY_OF_MONTH, dayData.day)
@@ -466,6 +591,54 @@ fun DayDetailDialog(
                     }
                 }
 
+                if (controlEntries.isNotEmpty()) {
+                    EntrySection(
+                        title = "Controles de Alérgenos Activos",
+                        color = colorScheme.secondary
+                    ) {
+                        controlEntries.forEach { control ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Tipo: ${control.controlType.displayName}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = colorScheme.primary
+                                    )
+
+                                    val allergenName = foodEntryViewModel.allergens.find {
+                                        it.id == control.allergenId
+                                    }?.name ?: "Desconocido"
+
+                                    Text(
+                                        text = "Alérgeno: $allergenName",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+
+                                    Text(
+                                        text = "Periodo: ${dateFormatter.format(control.startDateAsDate)} al ${dateFormatter.format(control.endDateAsDate)}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+
+                                    if (control.notes.isNotEmpty()) {
+                                        Text(
+                                            text = "Notas: ${control.notes}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)

@@ -15,6 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.Calendar
 import java.util.Date
 
 class FoodEntryViewModel : BaseEntryViewModel() {
@@ -231,9 +232,21 @@ class FoodEntryViewModel : BaseEntryViewModel() {
 
     suspend fun searchByDateRange(startDate: Date, endDate: Date): List<FoodEntry> {
         return try {
-            Log.d("FoodEntryViewModel", "Searching entries - Start: $startDate, End: $endDate")
-            val startTimestamp = Timestamp(startDate)
-            val endTimestamp = Timestamp(endDate)
+            val startCalendar = Calendar.getInstance().apply {
+                time = startDate
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+            }
+            val endCalendar = Calendar.getInstance().apply {
+                time = endDate
+                set(Calendar.HOUR_OF_DAY, 23)
+                set(Calendar.MINUTE, 59)
+                set(Calendar.SECOND, 59)
+            }
+
+            val startTimestamp = Timestamp(startCalendar.time)
+            val endTimestamp = Timestamp(endCalendar.time)
 
             val query = firestore.collection("food_entries")
                 .whereEqualTo("userId", auth.currentUser?.uid)

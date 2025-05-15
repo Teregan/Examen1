@@ -1,6 +1,8 @@
 package com.example.examen1.viewmodels
 
+import android.content.ContentValues.TAG
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
@@ -22,10 +24,12 @@ class ChatbotViewModel(private val context: Context) : ViewModel() {
 
     companion object {
         private const val INITIAL_MESSAGE  = "Hola! Soy tu asistente IA especializado en alergias. ¿En qué puedo ayudarte hoy?"
+        private const val TAG = "ChatbotViewModel"
+        private const val MODEL_NAME = "gemini-2.0-flash"
     }
 
     private val generativeModel = GenerativeModel(
-        modelName = "gemini-pro",
+        modelName = "gemini-2.0-flash",
         apiKey = BuildConfig.GEMINI_API_KEY
     )
     private val chat = generativeModel.startChat(
@@ -44,6 +48,10 @@ class ChatbotViewModel(private val context: Context) : ViewModel() {
         if (!_isFirstTime.value) {
             sendInitialMessage()
         }
+        // Verificar que el modelo y el chat se hayan inicializado correctamente
+        if (generativeModel == null || chat == null) {
+            Log.e(TAG, "Error: No se pudo inicializar el modelo o el chat")
+        }
     }
 
     fun acceptTerms() {
@@ -59,7 +67,9 @@ class ChatbotViewModel(private val context: Context) : ViewModel() {
             _chatMessages.update { it + UiChatMessage(true, userMessage) }
 
             try {
+                Log.d(TAG, "Enviando mensaje: $userMessage")
                 val response = chat.sendMessage(userMessage)
+                Log.d(TAG, "Respuesta recibida: ${response.text}")
                 // Filtrar la respuesta del chatbot
                 response.text?.let { text ->
                     if (isMessageAboutFoodAllergy(text)) {
@@ -71,6 +81,7 @@ class ChatbotViewModel(private val context: Context) : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error al enviar mensaje: ${e.message}", e)
                 _chatMessages.update {
                     it + UiChatMessage(
                         false,
@@ -97,12 +108,36 @@ class ChatbotViewModel(private val context: Context) : ViewModel() {
             "alergia",
             "alimento",
             "alergia alimentaria",
-            "síntomas alergia",
+            "síntomas",
+            "síntoma",
+            "reacción",
+            "reaccion",
             "deposiciones",
             "alimentos",
+            "comida",
+            "comer",
             "bebé",
+            "bebe",
             "niño",
-            "niña"
+            "niña",
+            "intolerancia",
+            "proteína",
+            "proteina",
+            "leche",
+            "huevo",
+            "frutos secos",
+            "picor",
+            "picazón",
+            "urticaria",
+            "ronchas",
+            "digestión",
+            "digestion",
+            "dieta",
+            "médico",
+            "medico",
+            "pediatra",
+            "alergólogo",
+            "alergologo"
         )
 
         return keywords.any { message.contains(it, ignoreCase = true) }

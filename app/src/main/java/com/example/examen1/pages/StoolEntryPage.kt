@@ -3,7 +3,6 @@ package com.example.examen1.pages
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -31,15 +30,28 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.examen1.components.ActionButton
 import com.example.examen1.components.ImagePicker
+import com.example.examen1.components.ThumbnailImage
 import com.example.examen1.models.FoodEntryState
 import com.example.examen1.models.StoolColor
 import com.example.examen1.models.StoolEntryState
 import com.example.examen1.models.StoolType
 import com.example.examen1.ui.theme.MainGreen
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.viewmodels.StoolEntryViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import android.content.Intent
+import androidx.core.content.FileProvider
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.BorderStroke
+import androidx.lifecycle.viewModelScope
+import com.example.examen1.services.PDFGenerator
+import com.example.examen1.services.sharePDF
+import com.example.examen1.viewmodels.FoodEntryViewModel
+import com.example.examen1.viewmodels.SymptomEntryViewModel
+import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +59,8 @@ fun StoolEntryPage(
     modifier: Modifier = Modifier,
     navController: NavController,
     viewModel: StoolEntryViewModel,
+    foodEntryViewModel: FoodEntryViewModel,
+    symptomEntryViewModel: SymptomEntryViewModel,
     entryId: String? = null,
     profileId: String
 ) {
@@ -54,6 +68,7 @@ fun StoolEntryPage(
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val alertsController = LocalAlertsController.current
 
     var selectedDate by remember { mutableStateOf(Date()) }
     var selectedTime by remember { mutableStateOf(timeFormatter.format(Date())) }
@@ -88,15 +103,20 @@ fun StoolEntryPage(
     LaunchedEffect(stoolEntryState.value) {
         when (val state = stoolEntryState.value) {
             is StoolEntryState.Success.Save -> {
-                Toast.makeText(
-                    context,
-                    if (entryId != null) "Registro actualizado" else "Registro guardado",
-                    Toast.LENGTH_SHORT
-                ).show()
-                navController.navigateUp()
+
+                alertsController.showSuccessAlert(
+                    title = "¡Éxito!",
+                    message = if (entryId != null) "Registro actualizado" else "Registro guardado",
+                    onConfirm = {
+                        navController.navigateUp()
+                    }
+                )
             }
             is StoolEntryState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                alertsController.showErrorAlert(
+                    title = "Error",
+                    message = state.message
+                )
             }
             else -> Unit
         }
@@ -350,17 +370,14 @@ fun StoolEntryPage(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(selectedImages.value) { imagePath ->
-                                Box {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(File(imagePath))
-                                            .crossfade(true)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(100.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .padding(4.dp)
+                                ) {
+                                    ThumbnailImage(
+                                        imagePath = imagePath,
+                                        modifier = Modifier.fillMaxSize()
                                     )
 
                                     // Botón de eliminar
@@ -370,14 +387,14 @@ fun StoolEntryPage(
                                             .align(Alignment.TopEnd)
                                             .size(24.dp)
                                             .background(
-                                                color = colorScheme.surface.copy(alpha = 0.5f),
+                                                color = Color.Black.copy(alpha = 0.5f),
                                                 shape = CircleShape
                                             )
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
                                             contentDescription = "Eliminar imagen",
-                                            tint = colorScheme.error,
+                                            tint = Color.White,
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
@@ -429,5 +446,50 @@ fun StoolEntryPage(
                 enabled = stoolEntryState.value != StoolEntryState.Loading,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (entryId != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val pdfGenerator = PDFGenerator(
+                            context = context,
+                            foodEntryViewModel = foodEntryViewModel,
+                            symptomEntryViewModel = symptomEntryViewModel
+                        )
+                        viewModel.viewModelScope.launch {
+                            try {
+                                val file = pdfGenerator.generateStoolDetailReport(currentEntry.value!!)
+                                sharePDF(context, file)
+                                alertsController.showSuccessAlert(
+                                    title = "Éxito",
+                                    message = "Informe generado correctamente"
+                                )
+                            } catch (e: Exception) {
+                                alertsController.showErrorAlert(
+                                    title = "Error",
+                                    message = "No se pudo generar el informe: ${e.message}"
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorScheme.primary
+                    ),
+                    border = BorderStroke(1.dp, colorScheme.primary)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Exportar",
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Exportar a PDF")
+                    }
+                }
+            }
         }
 }

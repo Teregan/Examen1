@@ -32,6 +32,7 @@ import androidx.navigation.NavController
 import com.example.examen1.AuthState
 import com.example.examen1.AuthViewModel
 import com.example.examen1.R
+import com.example.examen1.utils.LocalAlertsController
 import com.example.examen1.viewmodels.ProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ fun SignupPage(
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val alertsController = LocalAlertsController.current
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
@@ -236,11 +238,11 @@ fun SignupPage(
                                 if (email.isNotBlank() && password.isNotBlank()) {
                                     authViewModel.signup(email, password)
                                 } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Por favor completa todos los campos",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    alertsController.showWarningAlert(
+                                        title = "Aviso",
+                                        message = "Por favor completa todos los campos",
+                                        confirmText = "Entendido"
+                                    )
                                 }
                             }
                         ),
@@ -257,11 +259,11 @@ fun SignupPage(
                             if (email.isNotBlank() && password.isNotBlank()) {
                                 authViewModel.signup(email, password)
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    "Por favor completa todos los campos",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                alertsController.showWarningAlert(
+                                    title = "Aviso",
+                                    message = "Por favor completa todos los campos",
+                                    confirmText = "Entendido"
+                                )
                             }
                         },
                         modifier = Modifier

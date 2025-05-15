@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.example.examen1.components.ActionButton
 import com.example.examen1.components.ImagePicker
@@ -37,6 +39,12 @@ import java.text.SimpleDateFormat
 import java.util.*
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.examen1.components.ThumbnailImage
+import com.example.examen1.services.PDFGenerator
+import com.example.examen1.services.sharePDF
+import com.example.examen1.utils.LocalAlertsController
+import com.example.examen1.viewmodels.FoodEntryViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +52,7 @@ fun SymptomEntryPage(
     modifier: Modifier = Modifier,
     navController: NavController,
     viewModel: SymptomEntryViewModel,
+    foodEntryViewModel: FoodEntryViewModel,
     entryId: String? = null,
     profileId: String
 ) {
@@ -51,6 +60,7 @@ fun SymptomEntryPage(
     val context = LocalContext.current
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val alertsController = LocalAlertsController.current
 
     var selectedDate by remember { mutableStateOf(Date()) }
     var selectedTime by remember { mutableStateOf(timeFormatter.format(Date())) }
@@ -93,15 +103,19 @@ fun SymptomEntryPage(
     LaunchedEffect(symptomEntryState.value) {
         when (val state = symptomEntryState.value) {
             is SymptomEntryState.Success.Save -> {
-                Toast.makeText(
-                    context,
-                    if (entryId != null) "Registro actualizado" else "Registro guardado",
-                    Toast.LENGTH_SHORT
-                ).show()
-                navController.navigateUp()
+                alertsController.showSuccessAlert(
+                    title = "¡Éxito!",
+                    message = if (entryId != null) "Registro actualizado" else "Registro guardado",
+                    onConfirm = {
+                        navController.navigateUp()
+                    }
+                )
             }
             is SymptomEntryState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                alertsController.showErrorAlert(
+                    title = "Error",
+                    message = state.message
+                )
             }
             else -> Unit
         }
@@ -319,17 +333,14 @@ fun SymptomEntryPage(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(selectedImages.value) { imagePath ->
-                                Box {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(File(imagePath))
-                                            .crossfade(true)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(100.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .padding(4.dp)
+                                ) {
+                                    ThumbnailImage(
+                                        imagePath = imagePath,
+                                        modifier = Modifier.fillMaxSize()
                                     )
 
                                     // Botón de eliminar
@@ -402,6 +413,50 @@ fun SymptomEntryPage(
                 enabled = symptomEntryState.value != SymptomEntryState.Loading,
                 modifier = Modifier.fillMaxWidth()
             )
+            if (entryId != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val pdfGenerator = PDFGenerator(
+                            context = context,
+                            foodEntryViewModel = foodEntryViewModel,
+                            symptomEntryViewModel = viewModel
+                        )
+                        viewModel.viewModelScope.launch {
+                            try {
+                                val file = pdfGenerator.generateSymptomDetailReport(currentEntry.value!!)
+                                sharePDF(context, file)
+                                alertsController.showSuccessAlert(
+                                    title = "Éxito",
+                                    message = "Informe generado correctamente"
+                                )
+                            } catch (e: Exception) {
+                                alertsController.showErrorAlert(
+                                    title = "Error",
+                                    message = "No se pudo generar el informe: ${e.message}"
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorScheme.primary
+                    ),
+                    border = BorderStroke(1.dp, colorScheme.primary)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Exportar",
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Exportar a PDF")
+                    }
+                }
+            }
         }
 
 
